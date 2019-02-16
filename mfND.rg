@@ -331,7 +331,7 @@ task toplevel()
 				if rfronts[d]==0.0 then
 					c.printf("%3.1d",[int](rfronts[d]))
 				else
-					c.printf("%3.0f ", rfronts[d])
+					c.printf("%5.0f ", rfronts[d])
 				end	
 			end
 			c.printf("\n")
