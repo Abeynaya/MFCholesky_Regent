@@ -334,8 +334,9 @@ task toplevel()
 					c.printf("%3.0f ", rfronts[d])
 				end	
 			end
+			c.printf("\n")
 		end
-
+		c.printf("\n \n ")
 	end
 
 
