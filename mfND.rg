@@ -298,6 +298,7 @@ task toplevel()
 	end
 
 	-- Create the region of fronts
+	var rfronts_size = prev_size
 	var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
 
 	-- Create the partition 
@@ -319,18 +320,18 @@ task toplevel()
 		-- end
 	end
 
-	--Print matrix entries
-	-- for i=0, nrows do
-	-- 	for j=0, ncols do
-	-- 		var d : f2d = {y=i , x=j}
-	-- 		if r_perm[d]==0.0 then
-	-- 			c.printf("%3.1d",[int](r_perm[d]))
-	-- 		else
-	-- 			c.printf("%3.0f ", r_perm[d])
-	-- 		end
-	-- 	end
-	-- 	c.printf("\n")
-	-- end
+	-- Print matrix entries
+	for i=0, rfronts_size do
+		for j=0, rfronts_size do
+			var d : f2d = {y=i , x=j}
+			if r_fronts[d]==0.0 then
+				c.printf("%3.1d",[int](r_perm[d]))
+			else
+				c.printf("%3.0f ", r_perm[d])
+			end
+		end
+		c.printf("\n")
+	end
 
 
 	-- c.printf("SUCCESS: Matrix formed with ND ordering\n")
