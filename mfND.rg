@@ -155,13 +155,13 @@ do
 		for i=1, sep1_size+1 do
 			var idx_i = rseps[{x=si, y=i}]
 			if rrows[iter] == idx_i then
-				for j=1, sep2_size do
+				for j=1, sep2_size+1 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 					var idx_j = 0
-					if j<sep1_size then
+					if j<=sep1_size then
 						idx_j = rseps[{x=si, y=j}]
 					else
-						idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
+						idx_j = rnbrs[{x=si, y=j - sep1_size}]
 					end
 
 					if rcols[iter] == idx_j  then
