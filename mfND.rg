@@ -313,24 +313,29 @@ task toplevel()
 
 	-- Fill in the entries in our permuted matrix 
 	for si=0, num_seps do
-		var submatrix = pfronts[{x=si, y=si}]
+		var front = pfronts[{x=si, y=si}]
 		-- if xlo <= xhi then	
 			-- c.printf("color: {%d,%d}, bounds: lo:(%d %d), hi:(%d, %d)\n",colx, coly, xlo, ylo, xhi, yhi)
-		fill_matrix(rseps, rnbrs, si, rrows, rcols, rvals, submatrix)
+		fill_matrix(rseps, rnbrs, si, rrows, rcols, rvals, front)
 		-- end
 	end
 
 	-- Print matrix entries
-	for i=0, rfronts_size do
-		for j=0, rfronts_size do
-			var d : f2d = {y=i , x=j}
-			if rfronts[d]==0.0 then
-				c.printf("%3.1d",[int](rfronts[d]))
-			else
-				c.printf("%3.0f ", rfronts[d])
+	for si=0, num_seps do
+		var bds = pfronts[{x=si, y=si}].bounds 
+		var nr = bds.hi.y - bds.lo.x +1
+		var nc = bds.hi.x - bds.lo.x +1
+		for i=0, nr do
+			for j=0, nc do
+				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+				if rfronts[d]==0.0 then
+					c.printf("%3.1d",[int](rfronts[d]))
+				else
+					c.printf("%3.0f ", rfronts[d])
+				end	
 			end
 		end
-		c.printf("\n")
+
 	end
 
 
