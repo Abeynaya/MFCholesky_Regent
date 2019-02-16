@@ -288,7 +288,7 @@ task toplevel()
 	end
 
 	-- Create the region of fronts
-	var rfronts = region(ispace(f2d), {y=prev_size, x = prev_size})
+	var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
 
 	-- Create the partition 
 	var pspace = ispace(int2d, {x=num_seps, y=num_seps})
