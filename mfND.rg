@@ -176,10 +176,10 @@ do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 
 					var idx_j = 0
-					if j<sep1_size then
+					if j<= sep1_size then
 						idx_j = rseps[{x=si, y=j}]
 					else
-						idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
+						idx_j = rnbrs[{x=si, y=j - sep1_size}]
 					end
 
 
@@ -332,7 +332,7 @@ task toplevel()
 			for j=0, nc do
 				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
 				if rfronts[d]==0.0 then
-					c.printf("%5.1d",[int](rfronts[d]))
+					c.printf("%4.1d",[int](rfronts[d]))
 				else
 					c.printf("%5.0f ", rfronts[d])
 				end	
