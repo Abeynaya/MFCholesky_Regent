@@ -151,15 +151,10 @@ do
 
 	-- var rsubcol = rseps[{x=si}] | rnbrs[{x=si}]
 
-
-	var i : int = 0
-	var j : int = 0
-	
-	var counter : int = 0
 	for iter= 1, nz+1 do
 		for i=1, sep1_size+1 do
 			var idx_i = rseps[{x=si, y=i}]
-			if rrows[iter] == idx_i or rcols[iter]==idx_i then
+			if rrows[iter] == idx_i then
 				for j=1, sep2_size do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 					var idx_j = 0
@@ -169,23 +164,31 @@ do
 						idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
 					end
 
-					if rcols[iter] == idx_j or rrows[iter]== idx_j then
+					if rcols[iter] == idx_j  then
 						submatrix[point1] = rvals[iter]
 						-- counter = counter +1
 						break;
 					end
 				end
 
-			-- elseif rcols[iter] == idx_i then
-			-- 	for j=1, sep2_size+1 do
-			-- 		var idx_j = rsubcol[{x=si, y=j}]
-			-- 		var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-			-- 		if  rrows[iter] == idx_j then
-			-- 			submatrix[point1] = rvals[iter]
-			-- 			-- counter = counter +1
-			-- 			break;
-			-- 		end
-			-- 	end
+			elseif rcols[iter] == idx_i then
+				for j=1, sep2_size+1 do
+					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
+
+					var idx_j = 0
+					if j<sep1_size then
+						idx_j = rseps[{x=si, y=j}]
+					else
+						idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
+					end
+
+
+					if  rrows[iter] == idx_j then
+						submatrix[point1] = rvals[iter]
+						-- counter = counter +1
+						break;
+					end
+				end
 			end
 		end
 	end
@@ -329,7 +332,7 @@ task toplevel()
 			for j=0, nc do
 				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
 				if rfronts[d]==0.0 then
-					c.printf("%3.1d",[int](rfronts[d]))
+					c.printf("%5.1d",[int](rfronts[d]))
 				else
 					c.printf("%5.0f ", rfronts[d])
 				end	
