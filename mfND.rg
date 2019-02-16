@@ -162,10 +162,11 @@ do
 			if rrows[iter] == idx_i or rcols[iter]==idx_i then
 				for j=1, sep2_size do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
+					var idx_j = 0
 					if j<sep1_size then
-						var idx_j = rseps[{x=si, y=j}]
+						idx_j = rseps[{x=si, y=j}]
 					else
-						var idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
+						idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
 					end
 
 					if rcols[iter] == idx_j or rrows[iter]== idx_j then
