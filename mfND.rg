@@ -324,10 +324,10 @@ task toplevel()
 	for i=0, rfronts_size do
 		for j=0, rfronts_size do
 			var d : f2d = {y=i , x=j}
-			if r_fronts[d]==0.0 then
-				c.printf("%3.1d",[int](r_perm[d]))
+			if rfronts[d]==0.0 then
+				c.printf("%3.1d",[int](rfronts[d]))
 			else
-				c.printf("%3.0f ", r_perm[d])
+				c.printf("%3.0f ", rfronts[d])
 			end
 		end
 		c.printf("\n")
