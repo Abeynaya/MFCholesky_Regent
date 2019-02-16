@@ -149,7 +149,7 @@ do
 	var sep1_size = rseps[{x=si, y=0}] 
 	var sep2_size = sep1_size + rnbrs[{x=si, y=0}]
 
-	var rsubcol = rseps[{x=si,y=0}] | rnbrs[{x=si,y=0}]
+	-- var rsubcol = rseps[{x=si}] | rnbrs[{x=si}]
 
 
 	var i : int = 0
@@ -159,28 +159,33 @@ do
 	for iter= 1, nz+1 do
 		for i=1, sep1_size+1 do
 			var idx_i = rseps[{x=si, y=i}]
-			if rrows[iter] == idx_i then
-				for j=1, sep2_size+1 do
+			if rrows[iter] == idx_i or rcols[iter]==idx_i then
+				for j=1, sep2_size do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-					var idx_j = rsubcol[{x=si, y=j}]
-					if rcols[iter] == idx_j then
+					if j<sep1_size then
+						var idx_j = rseps[{x=si, y=j}]
+					else
+						var idx_j = rnbrs[{x=si, y=j - sep1_size+1}]
+					end
+
+					if rcols[iter] == idx_j or rrows[iter]== idx_j then
 						submatrix[point1] = rvals[iter]
 						-- counter = counter +1
 						break;
 					end
 				end
 
-			elseif rcols[iter] == idx_i then
-				for j=1, sep2_size+1 do
-					var idx_j = rsubcol[{x=si, y=j}]
-					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-					if  rrows[iter] == idx_j then
-						submatrix[point1] = rvals[iter]
-						-- counter = counter +1
-						break;
-					end
-				end
-			end
+			-- elseif rcols[iter] == idx_i then
+			-- 	for j=1, sep2_size+1 do
+			-- 		var idx_j = rsubcol[{x=si, y=j}]
+			-- 		var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
+			-- 		if  rrows[iter] == idx_j then
+			-- 			submatrix[point1] = rvals[iter]
+			-- 			-- counter = counter +1
+			-- 			break;
+			-- 		end
+			-- 	end
+			-- end
 		end
 	end
 
