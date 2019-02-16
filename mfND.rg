@@ -261,17 +261,38 @@ task toplevel()
 	-- Build tree 
 	var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
 	build_tree(nlvls, rtree)
-
 	c.printf("SUCCESS: Built tree of separators\n")
 
-	-- -- Create the coloring
-	-- var coloring = c.legion_domain_point_coloring_create() 
-	-- --creates the coloring function. Think of this as a function remember the colors
-	-- --we have used to color the different parts of our region
 
-	-- var prev_size 		: int64 = 0
-	-- var size 	  		: int64 = 0
-	-- var sep_position = region(ispace(int1d, num_seps), int)
+	-- Create a 2D coloring for different fronts
+	var coloring = c.legion_domain_point_coloring_create() 
+	--creates the coloring function. Think of this as a function remember the colors
+	--we have used to color the different parts of our region
+
+	var prev_size 		: int64 = 0
+	var size 	  		: int64 = 0
+	var sep_position = region(ispace(int1d, num_seps), int)
+
+	for si=0, num_seps do
+		size = rseps[{x=si, y=0}]+ rnbrs[{x=si,y=0}]
+		var lo : int2d = {prev_size,prev_size}
+		var hi : int2d = {prev_size+size-1, prev_size+size-1}
+		var color : int2d = {si,si}
+		add_colored_rect(coloring, color, lo, hi)
+
+		-- Check if the bounds make sense
+		c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
+	
+		-- Update prev_size
+		prev_size = prev_size + size
+	end
+
+	-- Create the region of fronts
+	var rfronts = region(ispace(f2d), {y=prev_size, x = prev_size})
+
+	-- Create the partition 
+	var pspace = ispace(int2d, {x=num_seps, y=num_seps})
+	var pfronts = partition(disjoint, rfronts, coloring, pspace)
 
 
 	-- __fence(__execution, __block)
