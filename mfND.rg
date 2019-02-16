@@ -158,11 +158,11 @@ do
 	var counter : int = 0
 	for iter= 1, nz+1 do
 		for i=1, sep1_size+1 do
-			var idx_i = rseps[{x=colx, y=i}]
+			var idx_i = rseps[{x=si, y=i}]
 			if rrows[iter] == idx_i then
 				for j=1, sep2_size+1 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-					var idx_j = rsubcol[{x=coly, y=j}]
+					var idx_j = rsubcol[{x=si, y=j}]
 					if rcols[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
 						-- counter = counter +1
@@ -172,7 +172,7 @@ do
 
 			elseif rcols[iter] == idx_i then
 				for j=1, sep2_size+1 do
-					var idx_j = rsubcol[{x=coly, y=j}]
+					var idx_j = rsubcol[{x=si, y=j}]
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 					if  rrows[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
