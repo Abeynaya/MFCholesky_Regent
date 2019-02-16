@@ -129,14 +129,15 @@ end
 
 -- Fill matrix 
 task fill_matrix(rseps : region(ispace(int2d), int),
-				 colx : int,
-				 coly : int,
+				 rnbrs : region(ispace(int2d), int), 
+				 si : int,
 				 rrows : region(ispace(int1d), int),
 				 rcols : region(ispace(int1d), int),
 				 rvals : region(ispace(int1d), double),
 				 submatrix   : region(ispace(f2d), double))
+
 where writes(submatrix),
-	  reads(rseps, rrows, rcols, rvals)
+	  reads(rseps, rnbrs, rrows, rcols, rvals)
 do
 	var bounds = submatrix.bounds
 	var xlo = bounds.lo.x
@@ -145,8 +146,11 @@ do
 	var yhi = bounds.hi.y
 	var nz = [int](rvals[0])
 
-	var sep1_size = rseps[{x=colx, y=0}]
-	var sep2_size = rseps[{x=coly, y=0}]
+	var sep1_size = rseps[{x=si, y=0}] 
+	var sep2_size = sep1_size + rnbrs[{x=si, y=0}]
+
+	var rsubcol = rseps[{x=si,y=0}] | rnbrs[{x=si,y=0}]
+
 
 	var i : int = 0
 	var j : int = 0
@@ -158,7 +162,7 @@ do
 			if rrows[iter] == idx_i then
 				for j=1, sep2_size+1 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-					var idx_j = rseps[{x=coly, y=j}]
+					var idx_j = rsubcol[{x=coly, y=j}]
 					if rcols[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
 						-- counter = counter +1
@@ -168,7 +172,7 @@ do
 
 			elseif rcols[iter] == idx_i then
 				for j=1, sep2_size+1 do
-					var idx_j = rseps[{x=coly, y=j}]
+					var idx_j = rsubcol[{x=coly, y=j}]
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 					if  rrows[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
@@ -294,87 +298,33 @@ task toplevel()
 	var pspace = ispace(int2d, {x=num_seps, y=num_seps})
 	var pfronts = partition(disjoint, rfronts, coloring, pspace)
 
+	c.printf("SUCCESS: Partitioning done\n")
 
-	-- __fence(__execution, __block)
- --    var ts_start = c.legion_get_current_time_in_micros()
 
-	-- for lvl=nlvls-1, -1, -1 do
-	-- 	var csize : int = cmath.pow(2, lvl) -- number of nodes at that level
-	-- 	for j=0, csize, 1 do 
-	-- 		var sep_idx : int = rtree[{x=lvl, y=j}]
-	-- 		size = rseps[{x=sep_idx, y=0}] -- Size of the separator
-	-- 		sep_position[sep_idx] = prev_size
+	__fence(__execution, __block)
+    var ts_start = c.legion_get_current_time_in_micros()
 
-	-- 		-- Create a 2D coloring according to seperator index
-	-- 		var lo : int2d = {prev_size, prev_size}
-	-- 		var hi : int2d = {prev_size+ size-1, prev_size+size-1}
-	-- 		var color : int2d = {sep_idx, sep_idx}
-	-- 		add_colored_rect(coloring, color, lo, hi)
+	-- Fill in the entries in our permuted matrix 
+	for si=0, num_seps do
+		var submatrix = pfronts[{x=si, y=si}]
+		-- if xlo <= xhi then	
+			-- c.printf("color: {%d,%d}, bounds: lo:(%d %d), hi:(%d, %d)\n",colx, coly, xlo, ylo, xhi, yhi)
+		fill_matrix(rseps, rnbrs, si, rrows, rcols, rvals, submatrix)
+		-- end
+	end
 
-	-- 		-- Check if the bounds make sense
-	-- 		-- c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
-
-	-- 		-- Go down the tree and assign colors for the children dependent on a seperator
-	-- 		var k = lvl+1
-	-- 		while k < nlvls do
-	-- 			var nchild : int = cmath.pow(2,k-lvl)
-	-- 			for p= 0, nchild, 1 do 
-	-- 				-- var child_idx : int = tree:get(k):get(cmath.pow(2,k-lvl)*j+p)
-	-- 				var child_idx : int = rtree[{x=k, y= cmath.pow(2,k-lvl)*j+p}]
-	-- 				var width = rseps[{x=child_idx, y=0}]
-	-- 				var start = sep_position[child_idx]
-
-	-- 				-- Create a 2D coloring according to seperator index
-	-- 				var clo : int2d = { prev_size, start }
-	-- 				var chi : int2d = {prev_size + size-1, start + width -1}
-	-- 				var ccolor : int2d = {child_idx, sep_idx}
-	-- 				add_colored_rect(coloring, ccolor, clo, chi)
-	-- 				-- c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", ccolor.x,ccolor.y,clo.x,
-	-- 				-- 														clo.y,chi.x,chi.y) 
-	-- 			end
-	-- 			k = k+1
+	--Print matrix entries
+	-- for i=0, nrows do
+	-- 	for j=0, ncols do
+	-- 		var d : f2d = {y=i , x=j}
+	-- 		if r_perm[d]==0.0 then
+	-- 			c.printf("%3.1d",[int](r_perm[d]))
+	-- 		else
+	-- 			c.printf("%3.0f ", r_perm[d])
 	-- 		end
-	-- 		-- Update size
-	-- 		prev_size = prev_size + size 
-	-- 		-- end
 	-- 	end
+	-- 	c.printf("\n")
 	-- end
-
-	-- -- Create partition with our explicit colouring
-	-- var pspace = ispace(int2d, {x = num_seps, y=num_seps}) 
-	-- var pmatrix = partition(disjoint, r_perm, coloring, pspace)
-
-	-- c.printf("SUCCESS: Partitioning done\n")
-
-	-- -- Fill in the entries in our permuted matrix 
-	-- for color in pspace do
-	-- 	var colx = color.x
-	-- 	var coly = color.y
-	-- 	var submatrix = pmatrix[color]
-	-- 	var bounds = submatrix.bounds
-	-- 	var xlo = bounds.lo.x
-	-- 	var ylo = bounds.lo.y
-	-- 	var xhi = bounds.hi.x
-	-- 	var yhi = bounds.hi.y
-		
-	-- 	if xlo <= xhi then	
-	-- 		-- c.printf("color: {%d,%d}, bounds: lo:(%d %d), hi:(%d, %d)\n",colx, coly, xlo, ylo, xhi, yhi)
-	-- 		fill_matrix(rseps, colx, coly, rrows, rcols, rvals, submatrix)
-	-- 	end
-	-- end
-
-	-- --Print matrix entries
-	-- -- for i=0, nrows do
-	-- -- 	for j=0, ncols do
-	-- -- 		var d : f2d = {y=i , x=j}
-	-- -- 		if r_perm[d]==0.0 then
-	-- -- 			c.printf("%3.1d",[int](r_perm[d]))
-	-- -- 		else
-	-- -- 			c.printf("%3.0f ", r_perm[d])
-	-- -- 		end
-	-- -- 	end
-	-- -- 	c.printf("\n")
-	-- -- end
 
 
 	-- c.printf("SUCCESS: Matrix formed with ND ordering\n")
@@ -509,9 +459,9 @@ task toplevel()
 	-- -- end
 
 
-	-- __fence(__execution, __block)
-	-- var ts_end = c.legion_get_current_time_in_micros()
- --  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
+	__fence(__execution, __block)
+	var ts_end = c.legion_get_current_time_in_micros()
+  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
   	-- Verify results
   	-- verify_result(nrows, r_org, r_perm)
