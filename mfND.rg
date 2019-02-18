@@ -347,7 +347,7 @@ task toplevel()
 
 	for l=nlvls-1, -1, -1 do
 		var nseps_at_l :int = cmath.pow(2,l)
-		for i=0, nseps_at_l do
+		for i=0, nseps_at_l, 1 do
 			
 			
 			var si : int = rtree[{x=l, y=i}]
@@ -359,9 +359,7 @@ task toplevel()
 				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
 				c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
 				var rparent = pfronts[{x=par_idx, y=par_idx}]
-				extend_add(rparent, par_idx,
-							rchild, si,
-							rfrows)
+				extend_add(rparent, par_idx, rchild, si, rfrows)
 			end
 		end
 	end

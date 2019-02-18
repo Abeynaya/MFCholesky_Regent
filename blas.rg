@@ -272,10 +272,8 @@ task extend_add(rparent : region(ispace(f2d), double),
                 rchild : region(ispace(f2d), double),
                 child_idx : int,
                 rfrows : region(ispace(int2d), int))
-where reads(rchild, rfrows),
-      reads writes(rparent)
+where reads writes(rparent), reads(rchild, rfrows)
 do
-
 
   -- Find the rows in the parent corresponding to the update
   var snbrs : int = rfrows[{x=child_idx, y=1}]
@@ -283,7 +281,7 @@ do
 
   var l:int = 2
   var start = rfrows[{x=child_idx, y=0}]+2
-  for i=start, start+snbrs do
+  for i=start, start+snbrs, 1 do
     while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,y=i}]) do
       l = l+1
     end
@@ -291,16 +289,14 @@ do
     c.printf("print l = %d\n", rind[i-start])
   end
 
-  for j = 0, snbrs do
+  for j = 0, snbrs, 1 do
     var fj = rind[j]
-    for i=0, snbrs do
+    for i=0, snbrs, 1 do
       var fi = rind[i]
       -- c.printf("fx =%d, fy=%d, cix=%d, ciy = %d\n", fi, fj, i+start-2, j+start-2)
       rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start-2, x=i+start-2}]
     end
   end
-
-
 
 end
 
