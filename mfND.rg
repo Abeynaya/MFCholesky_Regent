@@ -147,7 +147,7 @@ do
 	var nz = [int](rvals[0])
 
 	var sep1_size = rseps[{x=si, y=0}] 
-	var sep2_size = sep1_size 
+	var sep2_size = sep1_size + rnbrs[{x=si, y=0}]
 
 	-- var rsubcol = rseps[{x=si}] | rnbrs[{x=si}]
 
