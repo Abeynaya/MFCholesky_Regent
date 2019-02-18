@@ -295,7 +295,7 @@ do
     for i=0, snbrs do
       var fi = rind[i]
       rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] 
-                              + rchild[{y=j+start-2], x=i+start-2}]
+                              + rchild[{y=j+start-2, x=i+start-2}]
     end
   end
 
