@@ -345,9 +345,9 @@ task toplevel()
 	-- 	c.printf("\n \n ")
 	-- end
 
-	for l=nlvls-1, -1, -1 do
+	for l=nlvls-1, nlvls-2, -1 do
 		var nseps_at_l :int = cmath.pow(2,l)
-		for i=0, nseps_at_l, 1 do
+		for i=0, 1, 1 do
 			
 			
 			var si : int = rtree[{x=l, y=i}]
