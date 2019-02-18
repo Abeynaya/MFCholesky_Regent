@@ -82,7 +82,7 @@ do
 
 		read_char(fp, v) 
 
-		if code == "o" then
+		if [rawstring](code) == "o" then
 			var size = v[0]
 			rfrows[{x=i, y=0}] = size
 
@@ -93,7 +93,7 @@ do
 		else
 			var size = v[0]
 			rfrows[{x=i, y=1}] = size
-			var start = rrows[{x=i,y=0}]+2
+			var start = rfrows[{x=i,y=0}]+2
 
 			for j=start, start+size do
 				read_char(fp, v)
@@ -170,7 +170,7 @@ do
 				for j=2, sep2_size+2 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 
-					idx_j = rfrows[{x=si, y=j}]
+					var idx_j = rfrows[{x=si, y=j}]
 
 					if rcols[iter] == idx_j  then
 						submatrix[point1] = rvals[iter]
@@ -183,7 +183,7 @@ do
 				for j=2, sep2_size+2 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 
-					idx_j = rfrows[{x=si, y=j}]
+					var idx_j = rfrows[{x=si, y=j}]
 
 					if  rrows[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
@@ -327,23 +327,23 @@ task toplevel()
 	end
 
 	-- Print fronts
-	-- for si=0, num_seps do
-	-- 	var bds = pfronts[{x=si, y=si}].bounds 
-	-- 	var nr = bds.hi.y - bds.lo.x +1
-	-- 	var nc = bds.hi.x - bds.lo.x +1
-	-- 	for i=0, nr do
-	-- 		for j=0, nc do
-	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-	-- 			if rfronts[d]==0.0 then
-	-- 				c.printf("%2.1d",[int](rfronts[d]))
-	-- 			else
-	-- 				c.printf("%3.0f ", rfronts[d])
-	-- 			end	
-	-- 		end
-	-- 		c.printf("\n")
-	-- 	end
-	-- 	c.printf("\n \n ")
-	-- end
+	for si=0, num_seps do
+		var bds = pfronts[{x=si, y=si}].bounds 
+		var nr = bds.hi.y - bds.lo.x +1
+		var nc = bds.hi.x - bds.lo.x +1
+		for i=0, nr do
+			for j=0, nc do
+				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+				if rfronts[d]==0.0 then
+					c.printf("%2.1d",[int](rfronts[d]))
+				else
+					c.printf("%3.0f ", rfronts[d])
+				end	
+			end
+			c.printf("\n")
+		end
+		c.printf("\n \n ")
+	end
 
 	for l=nlvls-1, -1, -1 do
 		var nseps_at_l :int = cmath.pow(2,l)
@@ -355,13 +355,13 @@ task toplevel()
 			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
 
 			-- Extend add to the parent
-			if l~= 0 then
-				var par_idx : int = rtree[{x=l+1, y= [int](i/2)}]
-				var rparent = pfronts[int2d{x=par_idx, par_idx}]
-				extend_add(rparent, par_idx,
-							rchild, si,
-							rfrows)
-			end
+			-- if l~= 0 then
+			-- 	var par_idx : int = rtree[{x=l+1, y= [int](i/2)}]
+			-- 	var rparent = pfronts[int2d{x=par_idx, y=par_idx}]
+			-- 	extend_add(rparent, par_idx,
+			-- 				rchild, si,
+			-- 				rfrows)
+			-- end
 		end
 	end
 
