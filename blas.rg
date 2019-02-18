@@ -280,13 +280,13 @@ do
   var snbrs : int = rfrows[{x=child_idx, y=1}]
   var rind = region(ispace(int1d, snbrs),int)
 
-  var l:int = 0
+  var l:int = 2
   var start = rfrows[{x=child_idx, y=0}]+2
   for i=start, start+snbrs do
     while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,y=i}]) do
       l = l+1
     end
-    rind[i-start]=l
+    rind[i-start]=l-2
     c.printf("print l = %d\n", l)
   end
 
