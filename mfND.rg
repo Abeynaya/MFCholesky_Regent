@@ -339,7 +339,7 @@ task toplevel()
 	-- 	c.printf("\n \n ")
 	-- end
 
-	for l=nlvls-1, -1, -1 do
+	for l=nlvls-1, -1, nlvls-2 do
 		var nchild_at_l :int = cmath.pow(2,l)
 		for i=0, nchild_at_l do
 			var si : int = rtree[{x=l, y=i}]
@@ -348,6 +348,24 @@ task toplevel()
 		end
 	end
 
+	-- Print fronts
+	for si=0, num_seps do
+		var bds = pfronts[{x=si, y=si}].bounds 
+		var nr = bds.hi.y - bds.lo.x +1
+		var nc = bds.hi.x - bds.lo.x +1
+		for i=0, nr do
+			for j=0, nc do
+				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+				if rfronts[d]==0.0 then
+					c.printf("%2.1d",[int](rfronts[d]))
+				else
+					c.printf("%3.0f ", rfronts[d])
+				end	
+			end
+			c.printf("\n")
+		end
+		c.printf("\n \n ")
+	end
 
 
 	-- c.printf("SUCCESS: Cholesky decomposition found\n")
