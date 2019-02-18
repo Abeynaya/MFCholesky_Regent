@@ -273,7 +273,7 @@ task extend_add(rparent : region(ispace(f2d), double),
                 child_idx : int,
                 rfrows : region(ispace(int2d), int))
 where reads(rchild, rfrows),
-      reduces +(rparent)
+      reads writes(rparent)
 do
 
   -- Find the rows in the parent corresponding to the update
