@@ -259,9 +259,11 @@ do
               xlo, ylo, xlo+sseps-1, ylo+sseps-1,
               __physical(rfront)[0], __fields(rfront)[0],
               __physical(rfront)[0], __fields(rfront)[0])
-  -- gemm 
-  --dgemm_terra()
-
+  -- syrk 
+  dsyrk_terra(xlo+sseps, ylo+sseps, xhi, yhi,
+              xlo, ylo+sseps, xlo+sseps-1, yhi,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rfront)[0], __fields(rfront)[0])
 
 end
 
