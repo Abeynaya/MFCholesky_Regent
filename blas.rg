@@ -286,13 +286,13 @@ do
     while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,y=i}]) do
       l = l+1
     end
-    rind[{x= i-start}]=l
+    rind[i-start]=l
   end
 
   for j = 0, snbrs do
-    var fj = rind[{x=j}]
+    var fj = rind[j]
     for i=0, snbrs do
-      var fi = rind[{x=i}]
+      var fi = rind[i]
       rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start, x=i+start}]
     end
   end
