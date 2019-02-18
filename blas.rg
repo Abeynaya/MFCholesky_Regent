@@ -240,6 +240,25 @@ do
               __physical(rC)[0], __fields(rC)[0])
 end
 
+task factorize(rfront : region(ispace(f2d), double),
+        sseps : int,
+        snbrs : int)
+where reads writes(rfront)
+do
+  var bounds = rfront.bounds
+  var xlo = bounds.lo.x
+  var ylo = bounds.lo.y
+  var xhi = bounds.hi.x
+  var yhi = bounds.hi.y
+
+  -- potrf
+  dpotrf_terra(xlo, ylo, xlo+sseps, ylo+sseps, 
+         __physical(rfront)[0], __fields(rfront)[0])
+  -- trsm 
+  -- gemm 
+
+end
+
 return linalg
 -- task verify_result(n : int,
 --                    org : region(ispace(f2d), double),
