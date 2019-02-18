@@ -357,6 +357,7 @@ task toplevel()
 			-- Extend add to the parent
 			if l~= 0 then
 				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
+				c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
 				var rparent = pfronts[int2d{x=par_idx, y=par_idx}]
 				extend_add(rparent, par_idx,
 							rchild, si,
