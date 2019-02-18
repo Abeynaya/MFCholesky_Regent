@@ -354,11 +354,13 @@ task toplevel()
 			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
 
 			-- Extend add to the parent
-			var par_idx : int = rtree[{x=l+1, y= [int](i/2)}]
-			var rparent = pfronts[int2d{x=par_idx, par_idx}]
-			extend_add(rparent, par_idx,
-						rchild, si,
-						rfrows)
+			if l~= 0 then
+				var par_idx : int = rtree[{x=l+1, y= [int](i/2)}]
+				var rparent = pfronts[int2d{x=par_idx, par_idx}]
+				extend_add(rparent, par_idx,
+							rchild, si,
+							rfrows)
+			end
 		end
 	end
 
