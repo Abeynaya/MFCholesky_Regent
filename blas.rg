@@ -283,7 +283,7 @@ do
   var l:int = 2
   var start = rfrows[{x=child_idx, y=0}]+2
   for i=start, start+snbrs do
-    while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,i}]) do
+    while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,y=i}]) do
       l = l+1
     end
     rind[{x= i-start}]=l
