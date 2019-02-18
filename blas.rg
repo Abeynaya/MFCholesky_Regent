@@ -291,6 +291,7 @@ do
 
   for j = 0, snbrs do
     var fj = rind[j]
+    
     for i=0, snbrs do
       var fi = rind[i]
       rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start, x=i+start}]
