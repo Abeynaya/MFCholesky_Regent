@@ -255,7 +255,12 @@ do
   dpotrf_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1, 
          __physical(rfront)[0], __fields(rfront)[0])
   -- trsm 
+  dtrsm_terra(xlo, ylo+sseps-1, xlo+sseps-1, yhi,
+              xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rfront)[0], __fields(rfront)[0])
   -- gemm 
+
 
 end
 
