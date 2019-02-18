@@ -314,148 +314,40 @@ task toplevel()
 	__fence(__execution, __block)
     var ts_start = c.legion_get_current_time_in_micros()
 
-	-- Fill in the entries in our permuted matrix 
+	-- Form the fronts for each interface
 	for si=0, num_seps do
 		var front = pfronts[{x=si, y=si}]
-		-- if xlo <= xhi then	
-			-- c.printf("color: {%d,%d}, bounds: lo:(%d %d), hi:(%d, %d)\n",colx, coly, xlo, ylo, xhi, yhi)
 		fill_matrix(rseps, rnbrs, si, rrows, rcols, rvals, front)
-		-- end
 	end
 
-	-- Print matrix entries
-	for si=0, num_seps do
-		var bds = pfronts[{x=si, y=si}].bounds 
-		var nr = bds.hi.y - bds.lo.x +1
-		var nc = bds.hi.x - bds.lo.x +1
-		for i=0, nr do
-			for j=0, nc do
-				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-				if rfronts[d]==0.0 then
-					c.printf("%4.1d",[int](rfronts[d]))
-				else
-					c.printf("%5.0f ", rfronts[d])
-				end	
-			end
-			c.printf("\n")
-		end
-		c.printf("\n \n ")
-	end
-
-
-	-- c.printf("SUCCESS: Matrix formed with ND ordering\n")
-
-
-	-- -- -- Have a copy of the matrix to verify
-	-- -- copy(r_perm, r_org)
-
-	-- -- __fence(__execution, __block)
- -- --    var ts_start = c.legion_get_current_time_in_micros()
-
-	-- for l = nlvls-1, -1, -1 do
-	-- 	if l <= 4 then
-	-- 		var nchild_at_l : int = cmath.pow(2, l)
-	-- 		for i=0, nchild_at_l do
-	-- 			var si : int = rtree[{x=l, y=i}]
-	-- 			var rA = pmatrix[int2d{x=si, y=si}]
-	-- 			dpotrf(rA) -- Do the factorization of diagonal blocks
-
-	-- 			var c_idx : int = i
-	-- 			-- Triangular solve
-	-- 			for j=l-1, -1, -1 do -- go up the tree and find parents and grand parents
-	-- 				var parent : int = [int](c_idx/2)
-	-- 				var sepj : int = rtree[{x=j, y=parent}]
-	-- 				var rB = pmatrix[int2d{x=si, y=sepj}]
-	-- 				dtrsm(rB, pmatrix[int2d{x=si, y=si}]) -- reads writes to submatrix, reads pmatrix[]	
-	-- 				c_idx = parent 
-	-- 			end
-
-	-- 		    c_idx = i
-	-- 			for j=l-1, -1, -1 do
-	-- 				var parent : int = [int](c_idx/2)
-	-- 				var sepj : int = rtree[{x=j, y=parent}]
-	-- 				var rB = pmatrix[int2d{x=si, y=sepj}]
-	-- 				var rC = pmatrix[int2d{x=sepj, y=sepj}]
-	-- 				dsyrk(rC,rB)
-
-	-- 				var cp_parent = parent 
-
-	-- 				for y= j-1, -1, -1 do 
-	-- 					var grand_par : int = [int](cp_parent/2)
-	-- 					var sepy : int = rtree[{x=y, y=grand_par}]
-	-- 					var rD = pmatrix[ int2d{x=sepj, y=sepy} ]
-	-- 					var rE = pmatrix[ int2d{x=si, y=sepy} ]
-
-	-- 					dgemm(rD, rE, rB)
-	-- 					cp_parent = grand_par 
-	-- 				end
-	-- 				c_idx = parent 
-	-- 			end
+	-- Print fronts
+	-- for si=0, num_seps do
+	-- 	var bds = pfronts[{x=si, y=si}].bounds 
+	-- 	var nr = bds.hi.y - bds.lo.x +1
+	-- 	var nc = bds.hi.x - bds.lo.x +1
+	-- 	for i=0, nr do
+	-- 		for j=0, nc do
+	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+	-- 			if rfronts[d]==0.0 then
+	-- 				c.printf("%2.1d",[int](rfronts[d]))
+	-- 			else
+	-- 				c.printf("%3.0f ", rfronts[d])
+	-- 			end	
 	-- 		end
-
-	-- 	else 
-	-- 		var nchild_at_l : int = cmath.pow(2, l)
-	-- 		for i=0, nchild_at_l do
-	-- 			var si : int = rtree[{x=l, y=i}]
-
-	-- 			var rA = pmatrix[int2d{x=si, y=si}]
-	-- 			dpotrf_terra(rA.bounds.lo.x,rA.bounds.lo.y,
-	-- 						 rA.bounds.hi.x,rA.bounds.hi.y, 
-	-- 						 __physical(rA)[0], __fields(rA)[0]) -- Do the factorization of diagonal blocks
-
-	-- 			var c_idx : int = i
-	-- 			-- Triangular solve
-	-- 			for j=l-1, -1, -1 do -- go up the tree and find parents and grand parents
-	-- 				var parent : int = [int](c_idx/2)
-	-- 				var sepj : int = rtree[{x=j, y=parent}]
-
-	-- 				var rB = pmatrix[int2d{x=si, y=sepj}]
-	-- 				dtrsm_terra(rB.bounds.lo.x,rB.bounds.lo.y,
-	-- 						 	rB.bounds.hi.x,rB.bounds.hi.y, 
-	-- 						 	rA.bounds.lo.x,rA.bounds.lo.y,
-	-- 						 	rA.bounds.hi.x,rA.bounds.hi.y,
- --              					__physical(rB)[0], __fields(rB)[0],
- --             					__physical(rA)[0], __fields(rA)[0])	
-	-- 				c_idx = parent 
-	-- 			end
-
-	-- 		    c_idx = i
-	-- 			for j=l-1, -1, -1 do
-	-- 				var parent : int = [int](c_idx/2)
-	-- 				var sepj : int = rtree[{x=j, y=parent}]
-	-- 				var rB = pmatrix[int2d{x=si, y=sepj}]
-	-- 				var rC = pmatrix[int2d{x=sepj, y=sepj}]
-	-- 				dsyrk_terra(rC.bounds.lo.x,rC.bounds.lo.y,
-	-- 						 	rC.bounds.hi.x,rC.bounds.hi.y, 
-	-- 						 	rB.bounds.lo.x,rB.bounds.lo.y,
-	-- 						 	rB.bounds.hi.x,rB.bounds.hi.y,
- --              					__physical(rC)[0], __fields(rC)[0],
- --             				    __physical(rB)[0], __fields(rB)[0])
-
-	-- 				var cp_parent = parent 
-
-	-- 				for y= j-1, -1, -1 do 
-	-- 					var grand_par : int = [int](cp_parent/2)
-	-- 					var sepy : int = rtree[{x=y, y=grand_par}]
-	-- 					var rD = pmatrix[ int2d{x=sepj, y=sepy} ]
-	-- 					var rE = pmatrix[ int2d{x=si, y=sepy} ]
-
-	-- 					dgemm_terra(rD.bounds.lo.x,rD.bounds.lo.y,
-	-- 					 			rD.bounds.hi.x,rD.bounds.hi.y, 
-	-- 					 			rE.bounds.lo.x,rE.bounds.lo.y,
-	-- 					 			rE.bounds.hi.x,rE.bounds.hi.y,
-	-- 					 			rB.bounds.lo.x,rB.bounds.lo.y,
-	-- 					 			rB.bounds.hi.x,rB.bounds.hi.y,
- --          							__physical(rD)[0], __fields(rD)[0],
- --          							__physical(rE)[0], __fields(rE)[0],
- --          							__physical(rB)[0], __fields(rB)[0])
-	-- 					cp_parent = grand_par 
-	-- 				end
-	-- 				c_idx = parent 
-	-- 			end
-	-- 		end
+	-- 		c.printf("\n")
 	-- 	end
+	-- 	c.printf("\n \n ")
 	-- end
+
+	for l=nlvls-1, -1, -1 do
+		var nchild_at_l :int = cmath.pow(2,l)
+		for i=0, nchild_at_l do
+			var si : int = rtree[{x=l, y=i}]
+			var rA = pfronts[int2d{x=si, y=si}]
+			factorize(rA, rseps[{x=si, y=0}], rnbrs[{x=si, y=0}])
+		end
+	end
+
 
 
 	-- c.printf("SUCCESS: Cholesky decomposition found\n")
