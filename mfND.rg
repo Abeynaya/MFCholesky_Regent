@@ -68,7 +68,8 @@ end
 
 task read_nodes_region(rfrows : region(ispace(int2d), int),
 					  	file 	: regentlib.string,
-					  	num_seps : int)
+					  	num_seps : int,
+					  	code : regentlib.string)
 where reads writes(rfrows)
 do
 	var fp = c.fopen([rawstring](file), "rb")
