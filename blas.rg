@@ -273,7 +273,7 @@ task extend_add(rparent : region(ispace(f2d), double),
                 child_idx : int,
                 rfrows : region(ispace(int2d), int))
 where reads(rchild, rfrows),
-      reads writes(rparent)
+      reduces +(rparent)
 do
 
   -- Find the rows in the parent corresponding to the update
@@ -294,6 +294,7 @@ do
     var fj = rind[j]
     for i=0, snbrs do
       var fi = rind[i]
+      c.printf("fx =%d, fy=%d, cix=%d, ciy = %d\n", fi, fj, i+start-2, j+start-2)
       rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] 
                               + rchild[{y=j+start-2, x=i+start-2}]
     end
