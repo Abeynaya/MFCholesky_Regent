@@ -374,11 +374,11 @@ task toplevel()
 		for i=0, nr do
 			for j=0, nc do
 				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-				if rfronts[d]==0.0 then
-					c.printf("%2.1d",[int](rfronts[d]))
-				else
+				-- if rfronts[d]==0.0 then
+				-- 	c.printf("%2.1d",[int](rfronts[d]))
+				-- else
 					c.printf("%8.4f ", rfronts[d])
-				end	
+				-- end	
 			end
 			c.printf("\n")
 		end
