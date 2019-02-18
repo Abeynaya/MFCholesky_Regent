@@ -287,14 +287,15 @@ do
       l = l+1
     end
     rind[i-start]=l-2
-    c.printf("print l = %d\n", l)
+    c.printf("print l = %d\n", rind[i-start])
   end
 
   for j = 0, snbrs do
     var fj = rind[j]
     for i=0, snbrs do
       var fi = rind[i]
-      rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start, x=i+start}]
+      rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] 
+                              + rchild[{y=j+start-2], x=i+start-2}]
     end
   end
 
