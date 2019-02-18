@@ -168,7 +168,7 @@ do
 			var idx_i = rfrows[{x=si, y=i}]
 			if rrows[iter] == idx_i then
 				for j=2, sep2_size+2 do
-					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
+					var point1 : f2d = {y=j-2+ylo, x= i-2+xlo}
 
 					var idx_j = rfrows[{x=si, y=j}]
 
@@ -181,7 +181,7 @@ do
 
 			elseif rcols[iter] == idx_i then
 				for j=2, sep2_size+2 do
-					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
+					var point1 : f2d = {y=j-2+ylo, x= i-2+xlo}
 
 					var idx_j = rfrows[{x=si, y=j}]
 
