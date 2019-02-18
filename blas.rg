@@ -276,23 +276,7 @@ where reads(rchild, rfrows),
       reads writes(rparent)
 do
 
-  -- print parent
-  var bds = rparent.bounds 
-    var nr = bds.hi.y - bds.lo.x +1
-    var nc = bds.hi.x - bds.lo.x +1
-    for i=0, nr do
-      for j=0, nc do
-        var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-        if rfronts[d]==0.0 then
-          c.printf("%2.1d",[int](rfronts[d]))
-        else
-          c.printf("%8.4f ", rfronts[d])
-        end 
-      end
-      c.printf("\n")
-    end
-    c.printf("\n \n ")
-    
+
   -- Find the rows in the parent corresponding to the update
   var snbrs : int = rfrows[{x=child_idx, y=1}]
   var rind = region(ispace(int1d, snbrs),int)
@@ -317,22 +301,6 @@ do
     end
   end
 
-  -- print parent
-  var bds = rparent.bounds 
-    var nr = bds.hi.y - bds.lo.x +1
-    var nc = bds.hi.x - bds.lo.x +1
-    for i=0, nr do
-      for j=0, nc do
-        var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-        if rfronts[d]==0.0 then
-          c.printf("%2.1d",[int](rfronts[d]))
-        else
-          c.printf("%8.4f ", rfronts[d])
-        end 
-      end
-      c.printf("\n")
-    end
-    c.printf("\n \n ")
 
 
 end
