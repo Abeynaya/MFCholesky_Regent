@@ -69,7 +69,7 @@ end
 task read_nodes_region(rfrows : region(ispace(int2d), int),
 					  	file 	: regentlib.string,
 					  	num_seps : int,
-					  	code : regentlib.string)
+					  	code : int)
 where reads writes(rfrows)
 do
 	var fp = c.fopen([rawstring](file), "rb")
@@ -82,7 +82,7 @@ do
 
 		read_char(fp, v) 
 
-		if [rawstring](code) == "o" then
+		if code == 0 then
 			var size = v[0]
 			rfrows[{x=i, y=0}] = size
 
@@ -266,13 +266,13 @@ task toplevel()
 	-- Read in the seperators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
 
-	var code : regentlib.string = "o"
+	var code : int = 0
 	read_nodes_region(rfrows, ord, num_seps, code)
 	c.printf("SUCCESS: Read in the separators\n")
 
 	-- Read in the neighbors file
 	-- var rnbrs = region(ispace(int2d, {x=num_seps, y= max_length}), int) -- check
-	code = "n"
+	code = 1
 	read_nodes_region(rfrows, nbr, num_seps, code)
 	c.printf("SUCCESS: Read in the neighbors\n")
 
