@@ -296,8 +296,7 @@ do
     for i=0, snbrs do
       var fi = rind[i]
       -- c.printf("fx =%d, fy=%d, cix=%d, ciy = %d\n", fi, fj, i+start-2, j+start-2)
-      rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] 
-                              + rchild[{y=j+start-2, x=i+start-2}]
+      rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start-2, x=i+start-2}]
     end
   end
 
