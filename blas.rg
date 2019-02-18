@@ -267,6 +267,39 @@ do
 
 end
 
+task extend_add(rparent : region(ispace(f2d), double),
+                par_idx : int,
+                rchild : region(ispace(f2d), double),
+                child_idx : int,
+                rfrows : region(ispace(int2d), int))
+where reads(rchild, rfrows),
+      reads writes(rparent)
+do
+
+  -- Find the rows in the parent corresponding to the update
+  var snbrs : int = rfrows[{x=child_idx, y=1}]
+  var rind = region(ispace(int1d, snbrs),int)
+
+  var l:int = 2
+  var start = rfrows[{x=child_idx, y=0}]+2
+  for i=start, start+snbrs do
+    while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,i}]) do
+      l = l+1
+    end
+    rind[{x= i-start}]=l
+  end
+
+  for j = 0, snbrs do
+    var fj = rind[{x=j}]
+    for i=0, snbrs do
+      var fi = rind[{x=i}]
+      rparent[{y=fj, x=fi}] = rparent[{y=fj, x=fi}] + rchild[{y=j+start, x=i+start}]
+    end
+  end
+
+
+end
+
 return linalg
 -- task verify_result(n : int,
 --                    org : region(ispace(f2d), double),

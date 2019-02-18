@@ -66,10 +66,10 @@ terra read_char(fp : &c.FILE,
 	c.fscanf(fp,"%d", &v[0])
 end
 
-task read_seps_region(rseps : region(ispace(int2d), int),
-					  file 	: regentlib.string,
-					  num_seps : int)
-where writes(rseps)
+task read_nodes_region(rfrows : region(ispace(int2d), int),
+					  	file 	: regentlib.string,
+					  	num_seps : int)
+where reads writes(rfrows)
 do
 	var fp = c.fopen([rawstring](file), "rb")
 	skip_header(fp) -- Skip header
@@ -81,13 +81,25 @@ do
 
 		read_char(fp, v) 
 
-		var size = v[0]
-		rseps[{x=i, y=0}] = v[0]
+		if code == "o" then
+			var size = v[0]
+			rfrows[{x=i, y=0}] = size
 
-		for j=1, size+1 do
-			read_char(fp, v)
-			rseps[{x=i, y=j}]= v[0]
+			for j=2, size+2 do
+				read_char(fp, v)
+				rfrows[{x=i, y=j}]= v[0]
+			end
+		else
+			var size = v[0]
+			rfrows[{x=i, y=1}] = size
+			var start = rrows[{x=i,y=0}]+2
+
+			for j=start, start+size do
+				read_char(fp, v)
+				rfrows[{x=i, y=j}]= v[0]
+			end
 		end
+
 	end
 
 	c.fclose(fp)
@@ -128,8 +140,7 @@ terra add_colored_rect(coloring : c.legion_domain_point_coloring_t,
 end
 
 -- Fill matrix 
-task fill_matrix(rseps : region(ispace(int2d), int),
-				 rnbrs : region(ispace(int2d), int), 
+task fill_matrix(rfrows : region(ispace(int2d), int),
 				 si : int,
 				 rrows : region(ispace(int1d), int),
 				 rcols : region(ispace(int1d), int),
@@ -137,7 +148,7 @@ task fill_matrix(rseps : region(ispace(int2d), int),
 				 submatrix   : region(ispace(f2d), double))
 
 where writes(submatrix),
-	  reads(rseps, rnbrs, rrows, rcols, rvals)
+	  reads(rfrows, rrows, rcols, rvals)
 do
 	var bounds = submatrix.bounds
 	var xlo = bounds.lo.x
@@ -146,23 +157,19 @@ do
 	var yhi = bounds.hi.y
 	var nz = [int](rvals[0])
 
-	var sep1_size = rseps[{x=si, y=0}] 
-	var sep2_size = sep1_size + rnbrs[{x=si, y=0}]
+	var sep1_size = rfrows[{x=si, y=0}] 
+	var sep2_size = sep1_size + rfrows[{x=si, y=1}]
 
 	-- var rsubcol = rseps[{x=si}] | rnbrs[{x=si}]
 
 	for iter= 1, nz+1 do
-		for i=1, sep1_size+1 do
-			var idx_i = rseps[{x=si, y=i}]
+		for i=2, sep1_size+2 do
+			var idx_i = rfrows[{x=si, y=i}]
 			if rrows[iter] == idx_i then
-				for j=1, sep2_size+1 do
+				for j=2, sep2_size+2 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
-					var idx_j = 0
-					if j<=sep1_size then
-						idx_j = rseps[{x=si, y=j}]
-					else
-						idx_j = rnbrs[{x=si, y=j - sep1_size}]
-					end
+
+					idx_j = rfrows[{x=si, y=j}]
 
 					if rcols[iter] == idx_j  then
 						submatrix[point1] = rvals[iter]
@@ -172,16 +179,10 @@ do
 				end
 
 			elseif rcols[iter] == idx_i then
-				for j=1, sep2_size+1 do
+				for j=2, sep2_size+2 do
 					var point1 : f2d = {y=j-1+ylo, x= i-1+xlo}
 
-					var idx_j = 0
-					if j<= sep1_size then
-						idx_j = rseps[{x=si, y=j}]
-					else
-						idx_j = rnbrs[{x=si, y=j - sep1_size}]
-					end
-
+					idx_j = rfrows[{x=si, y=j}]
 
 					if  rrows[iter] == idx_j then
 						submatrix[point1] = rvals[iter]
@@ -252,7 +253,8 @@ task toplevel()
 	-- Ordering and neighbors file
 	var ord : regentlib.string = "ord.txt"
 	var nbr : regentlib.string = "nbr.txt"
-	-- Limits of rord, rnbr
+
+	-- Limits of rrows
 	var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
 	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
 
@@ -261,13 +263,16 @@ task toplevel()
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
 	-- Read in the seperators
-	var rseps = region(ispace(int2d, {x=num_seps, y= max_length}), int)
-	read_seps_region(rseps, ord, num_seps)
+	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
+
+	var code : regentlib.string = "o"
+	read_nodes_region(rfrows, ord, num_seps, code)
 	c.printf("SUCCESS: Read in the separators\n")
 
 	-- Read in the neighbors file
-	var rnbrs = region(ispace(int2d, {x=num_seps, y= max_length}), int) -- check
-	read_seps_region(rnbrs, nbr, num_seps)
+	-- var rnbrs = region(ispace(int2d, {x=num_seps, y= max_length}), int) -- check
+	code = "n"
+	read_nodes_region(rfrows, nbr, num_seps, code)
 	c.printf("SUCCESS: Read in the neighbors\n")
 
 	
@@ -287,7 +292,7 @@ task toplevel()
 	var sep_position = region(ispace(int1d, num_seps), int)
 
 	for si=0, num_seps do
-		size = rseps[{x=si, y=0}]+ rnbrs[{x=si,y=0}]
+		size = rfrows[{x=si, y=0}]+ rfrows[{x=si,y=1}]
 		var lo : int2d = {prev_size,prev_size}
 		var hi : int2d = {prev_size+size-1, prev_size+size-1}
 		var color : int2d = {si,si}
@@ -317,7 +322,7 @@ task toplevel()
 	-- Form the fronts for each interface
 	for si=0, num_seps do
 		var front = pfronts[{x=si, y=si}]
-		fill_matrix(rseps, rnbrs, si, rrows, rcols, rvals, front)
+		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
 	end
 
 	-- Print fronts
@@ -340,11 +345,20 @@ task toplevel()
 	-- end
 
 	for l=nlvls-1, -1, -1 do
-		var nchild_at_l :int = cmath.pow(2,l)
-		for i=0, nchild_at_l do
+		var nseps_at_l :int = cmath.pow(2,l)
+		for i=0, nseps_at_l do
+			
+			
 			var si : int = rtree[{x=l, y=i}]
-			var rA = pfronts[int2d{x=si, y=si}]
-			factorize(rA, rseps[{x=si, y=0}], rnbrs[{x=si, y=0}])
+			var rchild = pfronts[int2d{x=si, y=si}]
+			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
+
+			-- Extend add to the parent
+			var par_idx : int = rtree[{x=l+1, y= [int](i/2)}]
+			var rparent = pfronts[int2d{x=par_idx, par_idx}]
+			extend_add(rparent, par_idx,
+						rchild, si,
+						rfrows)
 		end
 	end
 
