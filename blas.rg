@@ -297,8 +297,8 @@ do
     for i=0, snbrs, 1 do
       var fi = rind[i]
       -- c.printf("fx =%d, fy=%d, cix=%d, ciy = %d\n", fi, fj, i+start-2, j+start-2)
-      rparent[{y=pbds.ylo+fj, x=pbds.xlo+fi}] = rparent[{y=pbds.ylo+fj, x=pbds.xlo+fi}] 
-                                                + rchild[{y=cbds.ylo+j+start-2, x=cbds.xlo+i+start-2}]
+      rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] = rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] 
+                                                + rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
     end
   end
 
