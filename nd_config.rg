@@ -95,7 +95,9 @@ terra Config:initialize_from_command()
   			i=i+1
   		else 
   			self.dimension = 2
+			i=i+1
   		end
+
   	end
 
 
