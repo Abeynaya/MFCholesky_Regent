@@ -406,13 +406,13 @@ do
               __physical(rxn)[0], __fields(rxn)[0],0)
 
 -- some kind of extend add
-var globid : int = start+sseps
-for i=0, snbrs do
-  while (rperm[globid]~= rfrows[{x=front_idx, y=sseps+2+i}]) do
-    globid = globid+1
-  end
-  rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i}]
-end
+-- var globid : int = start+sseps
+-- for i=0, snbrs do
+--   while (rperm[globid]~= rfrows[{x=front_idx, y=sseps+2+i}]) do
+--     globid = globid+1
+--   end
+--   rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i}]
+-- end
 
 end
 
