@@ -400,7 +400,7 @@ do
 
   dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
               0,start ,0,start+sseps-1,
-              rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
+              0, 0, 0, snbrs, 
               __physical(rfront)[0], __fields(rfront)[0],
               __physical(rx)[0], __fields(rx)[0], 
               __physical(rxn)[0], __fields(rxn)[0],0)

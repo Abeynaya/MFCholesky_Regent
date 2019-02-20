@@ -392,7 +392,7 @@ task toplevel()
 
   	-- index = 0
   	-- for i=0, num_seps do
-  	-- 	bwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
+  	-- 	bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
   	-- 	index = index+rfrows[{x=i, y=0}]
   	-- end
 
