@@ -383,11 +383,11 @@ task toplevel()
   	fill(rx, 2.0)
   	copy(rx, rb)
 
-  	-- var index : int = 0
-  	-- for i=0, num_seps do
-  	-- 	fwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
-  	-- 	index = index+rfrows[{x=i, y=0}]
-  	-- end
+  	var index : int = 0
+  	for i=0, num_seps do
+  		fwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
+  		index = index+rfrows[{x=i, y=0}]
+  	end
 
   	-- index = 0
   	-- for i=0, num_seps do
