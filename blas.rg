@@ -465,32 +465,32 @@ do
               __physical(rx)[0], __fields(rx)[0], 1)
 end
 
--- task verify(rrows : region(ispace(int1d), int),
---              rcols : region(ispace(int1d), int),
---              rvals : region(ispace(int1d), double),
---              rb   : region(ispace(int2d), double),
---              rx : region(ispace(int2d), double),
---              rperm : region(ispace(int1d), int))
--- where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
--- do 
--- var nvals = rrows.bounds.hi - rrows.bounds.lo
--- var nrows = rx.bounds.hi.y - rx.bounds.lo.y
+task verify(rrows : region(ispace(int1d), int),
+             rcols : region(ispace(int1d), int),
+             rvals : region(ispace(int1d), double),
+             rb   : region(ispace(int2d), double),
+             rx : region(ispace(int2d), double),
+             rperm : region(ispace(int1d), int))
+where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
+do 
+var nvals = rrows.bounds.hi - rrows.bounds.lo
+var nrows = rx.bounds.hi.y - rx.bounds.lo.y
 
--- for i=0, nvals do
---   rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
---   if rcols[i] ~= rrows[i] then
---     rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
---   end 
--- end
+for i=0, nvals do
+  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
+  if rcols[i] ~= rrows[i] then
+    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
+  end 
+end
 
--- var sum : double = 0.0
--- for i=0, nrows do
---   sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
--- end
+var sum : double = 0.0
+for i=0, nrows do
+  sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
+end
 
--- c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
+c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
 
--- end
+end
 
 
 return linalg
