@@ -9,7 +9,7 @@ local std = terralib.includec("stdlib.h")
 -- Include blas and lapack solvers
 local linalg = require("blas")
 -- Include config file for command line arguments
-local Config = require("nd_config.rg")
+local Config = require("nd_config")
 
 -- declare fortran-order 2D indexspace
 local f2d = linalg.f2d
