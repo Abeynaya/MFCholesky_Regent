@@ -252,10 +252,6 @@ task toplevel()
 
 	c.printf("n_rows = %d, n_cols=%d, nz=%d\n",nrows,ncols,nz)
 
-	-- Create logical region for the matrix 
-	var r_org = region(ispace(f2d, {y=nrows,x=ncols}), double)
-	var r_perm = region(ispace(f2d, {y=nrows,x=ncols}), double)
-
 	-- Ordering and neighbors file
 	var ord = config.filename_ord
 	var nbr = config.filename_nbr
@@ -276,7 +272,6 @@ task toplevel()
 	c.printf("SUCCESS: Read in the separators\n")
 
 	-- Read in the neighbors file
-	-- var rnbrs = region(ispace(int2d, {x=num_seps, y= max_length}), int) -- check
 	code = 1
 	read_nodes_region(rfrows, nbr, num_seps, code)
 	c.printf("SUCCESS: Read in the neighbors\n")
@@ -286,6 +281,19 @@ task toplevel()
 	var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
 	build_tree(nlvls, rtree)
 	c.printf("SUCCESS: Built tree of separators\n")
+
+
+	-- permutation vector
+	rperm = region(ispace(int1d, nrows), int)
+	var tot_ord_size : int = 0
+	-- Add to perm vectors
+	for si=0, num_seps do
+		var ord_size : int = rfrows[{x=si, y=0}]
+		for j=0, ord_size do
+			rperm[j+tot_ord_size] = rfrows[{x=si, y=j+2}]
+		end
+		tot_ord_size = tot_ord_size + ord_size
+	end
 
 
 	-- Create a 2D coloring for different fronts
@@ -303,12 +311,10 @@ task toplevel()
 		var hi : int2d = {prev_size+size-1, prev_size+size-1}
 		var color : int2d = {si,si}
 		add_colored_rect(coloring, color, lo, hi)
-
-		-- Check if the bounds make sense
-		c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
-	
 		-- Update prev_size
 		prev_size = prev_size + size
+		-- Check if the bounds make sense
+		-- c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
@@ -353,8 +359,6 @@ task toplevel()
 	for l=nlvls-1, -1, -1 do
 		var nseps_at_l :int = cmath.pow(2,l)
 		for i=0, nseps_at_l, 1 do
-			
-			
 			var si : int = rtree[{x=l, y=i}]
 			var rchild = pfronts[{x=si, y=si}]
 			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
@@ -373,29 +377,47 @@ task toplevel()
 	var ts_end = c.legion_get_current_time_in_micros()
   	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
+  	-- Solve 
+  	var rx = region(ispace(int1d, nrows),double)
+  	var rb = region(ispace(int1d, nrows),double)
+  	fill(rx, 2.0)
+  	copy(rx, rb)
 
-	-- Print fronts
-	for si=0, num_seps do
-		var bds = pfronts[{x=si, y=si}].bounds 
-		var nr = bds.hi.y - bds.lo.x +1
-		var nc = bds.hi.x - bds.lo.x +1
-		for i=0, nr do
-			for j=0, nc do
-				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-				-- if rfronts[d]==0.0 then
-				-- 	c.printf("%2.1d",[int](rfronts[d]))
-				-- else
-					c.printf("%8.4f ", rfronts[d])
-				-- end	
-			end
-			c.printf("\n")
-		end
-		c.printf("\n \n")
-	end
+  	var index : int = 0
+  	for i=0, num_seps do
+  		fwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
+  		index = index+rfrows[{x=i, y=0}]
+  	end
+
+  	index = 0
+  	for i=0, num_seps do
+  		bwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
+  		index = index+rfrows[{x=i, y=0}]
+  	end
+
+  	var rx_unperm = region(ispace(int1d, nrows), double)
+  	for i=0, nrows do
+  		rx_unperm[rperm[i]] = rx[i]
+  	end
+  	-- Verify 
+  	verify(rrows, rcols, rvals, rx_unperm, rb)
 
 
-	
-   
+
+	-- -- Print fronts
+	-- for si=num_seps-1, num_seps do
+	-- 	var bds = pfronts[{x=si, y=si}].bounds 
+	-- 	var nr = bds.hi.y - bds.lo.x +1
+	-- 	var nc = bds.hi.x - bds.lo.x +1
+	-- 	for i=0, nr do
+	-- 		for j=0, nc do
+	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+	-- 			c.printf("%8.4f ", rfronts[d])	
+	-- 		end
+	-- 		c.printf("\n")
+	-- 	end
+	-- 	c.printf("\n \n")
+	-- end
 
 end
 

@@ -30,6 +30,13 @@ extern void dsyrk_(char *uplo, char* trans, int* n, int* k,
                    double* alpha, double *A, int *lda,
                    double* beta, double *C, int *ldc);
 
+extern void dtrsv_(char *uplo, char* trans, char* diag,
+                   int* n, double *A, int *lda, double *X, int *incx);
+
+extern void dgemv_(char* trans, int* m, int* n, double* alpha,
+                   double* A, int* lda, double* X, int* incx, double* beta,
+                   double* Y, int* incy);             
+
 ]]
 
 if os.execute("bash -c \"[ `uname` == 'Darwin' ]\"") == 0 then
@@ -303,6 +310,174 @@ do
 
 end
 
+terra dtrsv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
+                  xloB : int, yloB:int, xhiB: int, yhiB: int,
+                  prA : c.legion_physical_region_t,
+                  fldA : c.legion_field_id_t,
+                  prB : c.legion_physical_region_t,
+                  fldB : c.legion_field_id_t,
+                  code : int)
+  -- var side : rawstring = 'R'
+  var uplo : rawstring = 'L'
+  var trans : rawstring = ''
+  if code == 0
+    trans ='N'
+  else
+    trans = 'T'
+  end
+  var diag : rawstring = 'N'
+  var rows_ : int[1]
+  rows_[0] =  yhiA-yloA+1
+  -- var alpha : double[1] = array(1.0)
+
+  var rawA = get_raw_ptr(xloA, yloA, xhiA, yhiA, prA, fldA)
+  var rawB = get_raw_ptr(xloB, yloB, xhiB, yhiB, prB, fldB)
+
+  blas.dtrsv_(uplo, trans, diag, rows_, 
+              rawA.ptr, &(rawA.offset), rawB.ptr, &(rawB.offset))
+end
+
+
+terra dgemv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
+                  xloB : int, yloB:int, xhiB: int, yhiB: int,
+                  xloC : int, yloC:int, xhiC: int, yhiC: int,
+                  prA : c.legion_physical_region_t,
+                  fldA : c.legion_field_id_t,
+                  prB : c.legion_physical_region_t,
+                  fldB : c.legion_field_id_t,
+                  prC : c.legion_physical_region_t,
+                  fldC : c.legion_field_id_t,
+                  code : int)
+  if code == 0
+    trans ='N'
+  else
+    trans = 'T'
+  end
+ 
+  var M_ : int[1], N_ : int[1]
+  M_[0] = yhiA - yloA +1--  rows of rA
+  N_[0] = xhiA - xloA +1 -- cols of rA
+
+  var alpha : double[1] = array(-1.0)
+  var beta : double[1] = array(1.0)
+
+  var rawA = get_raw_ptr(xloA, yloA, xhiA, yhiA, prA, fldA)
+  var rawB = get_raw_ptr(xloB, yloB, xhiB, yhiB, prB, fldB)
+  var rawC = get_raw_ptr(xloC, yloC, xhiC, yhiC, prC, fldC)
+
+  blas.dgemv_(trans,M_, N_,
+              alpha, rawA.ptr, &(rawA.offset),
+              rawB.ptr, &(rawB.offset),
+              beta, rawC.ptr, &(rawC.offset))
+end
+
+-- Forward solve
+terra fwd(rx : region(ispace(int1d), double),
+          rfront : region(ispace(f2d), double),
+          rfrows : region(ispace(int2d), int),
+          rperm : region(ispace(int1d), int),
+          front_idx : int,
+          start : int)
+
+  var sseps : int = rfrows[{x=front_idx, y=0}]
+  var snbrs : int = rfrows[{x=front_idx, y=1}]
+  var rxn = region(ispace(int1d, snbrs), double)
+  fill(rxn, 0.0)
+  
+  var bounds = rfront.bounds
+  var xlo = bounds.lo.x
+  var ylo = bounds.lo.y
+  var xhi = bounds.hi.x
+  var yhi = bounds.hi.y
+
+  dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              0, start,0, start+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rx)[0], __fields(rx)[0], 0)
+
+  dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
+              0,start ,0,start+sseps-1,
+              rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rx)[0], __fields(rx)[0], 
+              __physical(rxn)[0], __fields(rxn)[0],0)
+
+-- some kind of extend add
+var globid : int = start+sseps
+for i=0, snbrs do
+  while (rperm[globid]~= rfrows[{x=front_idx, y=sseps+2+i}]) do
+    globid = globid+1
+  end
+  rx[globid] = rx[globid]+rxn[i]
+end
+
+end
+
+-- Backward solve
+terra bwd(rx : region(ispace(int1d), double),
+          rfront : region(ispace(f2d), double),
+          rfrows : region(ispace(int2d), int),
+          rperm : region(ispace(int1d), int),
+          front_idx : int,
+          start : int)
+  var sseps : int = rfrows[{x=front_idx, y=0}]
+  var snbrs : int = rfrows[{x=front_idx, y=1}]
+  var rxn = region(ispace(int1d, snbrs), double)
+  fill(rxn, 0.0)
+
+  -- Copy from x to xn 
+  var globid : int = start +sseps
+  for i=0, snbrs do
+    while(rperm[globid] ~= rfrows[{x=rfrows, y=sseps+2+i}]) do
+      globid = globid+1
+    end
+    rxn[i] = rx[globid]
+  end
+  
+  var bounds = rfront.bounds
+  var xlo = bounds.lo.x
+  var ylo = bounds.lo.y
+  var xhi = bounds.hi.x
+  var yhi = bounds.hi.y
+
+  dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
+              rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
+              0,start ,0,start+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rxn)[0], __fields(rxn)[0],
+              __physical(rx)[0], __fields(rx)[0], 1)
+
+  dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              0, start,0, start+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rx)[0], __fields(rx)[0], 1)
+end
+
+terra verify(rrows : region(ispace(int1d), int),
+             rcols : region(ispace(int1d), int),
+             rvals : region(ispace(int1d), double),
+             rb   : region(ispace(int1d), double),
+             rx : region(ispace(int1d), double),
+             rperm : region(ispace(int1d), int))
+
+var nvals = rrows.bounds.hi - rrows.bounds.lo
+var nrows = rx.bounds.hi - rx.bounds.lo
+
+for i=0, nvals do
+  rb[rrows[i]] = rb[rrows[i]]-rvals[i]rx[rcols[i]]
+  if rcols[i] ~= rrows[i] then
+    rb[rcols[i]] = rb[rcols[i]]-rvals[i]rx[rrows[i]]
+  end 
+end
+
+var sum : double = 0.0
+for i=0, nrows do
+  sum = sum + rb[i]*rb[i]
+end
+
+c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
+
+end
 
 
 return linalg
