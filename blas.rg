@@ -432,7 +432,7 @@ do
   -- Copy from x to xn 
   var globid : int = start +sseps
   for i=0, snbrs do
-    while(rperm[globid] ~= rfrows[{x=rfrows, y=sseps+2+i}]) do
+    while(rperm[globid] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
       globid = globid+1
     end
     rxn[{x=0,y=i}] = rx[{x=0,y=globid}]
