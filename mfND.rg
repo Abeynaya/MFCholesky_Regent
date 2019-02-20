@@ -284,7 +284,7 @@ task toplevel()
 
 
 	-- permutation vector
-	rperm = region(ispace(int1d, nrows), int)
+	var rperm = region(ispace(int1d, nrows), int)
 	var tot_ord_size : int = 0
 	-- Add to perm vectors
 	for si=0, num_seps do
