@@ -83,23 +83,23 @@ terra Config:initialize_from_command()
   --   c.printf("One of the input files missing\n\n")
   --   print_usage_and_abort()
   -- end
-  while i < tot do
-  	if i==1 then 
-  		self.filename_matrix = [regentlib.string](args.argv[i])
-  		i=i+1
-  		elseif i==2 then
-  			self.filename_ord = [regentlib.string](args.argv[i])
+    while i < tot do
+  		if i==1 then 
+  			self.filename_matrix = [regentlib.string](args.argv[i])
   			i=i+1
-  			elseif i==3 then
-  				self.filename_nbr = [regentlib.string](args.argv[i])
+  			elseif i==2 then
+  				self.filename_ord = [regentlib.string](args.argv[i])
   				i=i+1
-  			else
-  				self.dimension = 2
+  				elseif i==3 then
+  					self.filename_nbr = [regentlib.string](args.argv[i])
+  					i=i+1
+  					elseif i==4 then
+  						self.dimension = 2
+  					end
+  				end
   			end
   		end
   	end
-  end
-
 end
 
 
