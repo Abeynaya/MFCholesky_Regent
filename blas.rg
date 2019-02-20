@@ -432,7 +432,7 @@ do
   -- Copy from x to xn 
   var l : int = 0
   for i=0, snbrs do
-    while(rperm[l] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
+    while(rfrows[{x=front_idx+1, y=2+l}] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
       l= l+1
     end
     rxn[{x=0,y=i}] = rx[{x=0,y=l}]
