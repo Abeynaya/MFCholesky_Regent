@@ -385,7 +385,8 @@ task toplevel()
 
   	var index : int = 0
   	for i=0, num_seps do
-  		fwd(rx, pfronts[{x=i,x=i}], rfrows, rperm, i, index)
+  		-- var rA
+  		fwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
   		index = index+rfrows[{x=i, y=0}]
   	end
 
