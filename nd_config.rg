@@ -40,48 +40,66 @@ terra Config:initialize_from_command()
 
   var args = c.legion_runtime_get_input_args()
   var i = 1
-  while i < args.argc do
-    if cstring.strcmp(args.argv[i], "-h") == 0 then
-      print_usage_and_abort()
-    elseif cstring.strcmp(args.argv[i], "-m") == 0 then
-      i = i + 1
-      -- if not file_exists(args.argv[i]) then
-      --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
-      --   c.abort()
-      -- end
+  var tot = args.argc
+  -- while i < args.argc do
+  --   if cstring.strcmp(args.argv[i], "-h") == 0 then
+  --     print_usage_and_abort()
+  --   elseif cstring.strcmp(args.argv[i], "-m") == 0 then
+  --     i = i + 1
+  --     -- if not file_exists(args.argv[i]) then
+  --     --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
+  --     --   c.abort()
+  --     -- end
 
-      self.filename_matrix = [regentlib.string](args.argv[i])
-      -- cstring.strcpy(self.filename_matrix, [regentlib.string](args.argv[i]))
+  --     self.filename_matrix = [regentlib.string](args.argv[i])
+  --     -- cstring.strcpy(self.filename_matrix, [regentlib.string](args.argv[i]))
       
-    elseif cstring.strcmp(args.argv[i], "-o") == 0 then
-      i = i + 1
-      -- if not file_exists(args.argv[i]) then
-      --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
-      --   c.abort()
-      -- end
-      self.filename_ord= [regentlib.string](args.argv[i])
+  --   elseif cstring.strcmp(args.argv[i], "-o") == 0 then
+  --     i = i + 1
+  --     -- if not file_exists(args.argv[i]) then
+  --     --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
+  --     --   c.abort()
+  --     -- end
+  --     self.filename_ord= [regentlib.string](args.argv[i])
 
-      -- cstring.strcpy(self.filename_ord, [regentlib.string](args.argv[i]))
-    elseif cstring.strcmp(args.argv[i], "-n") == 0 then
-      i = i + 1
-      -- if not file_exists(args.argv[i]) then
-      --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
-      --   c.abort()
-      -- end
-      self.filename_nbr= [regentlib.string](args.argv[i])
+  --     -- cstring.strcpy(self.filename_ord, [regentlib.string](args.argv[i]))
+  --   elseif cstring.strcmp(args.argv[i], "-n") == 0 then
+  --     i = i + 1
+  --     -- if not file_exists(args.argv[i]) then
+  --     --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
+  --     --   c.abort()
+  --     -- end
+  --     self.filename_nbr= [regentlib.string](args.argv[i])
 
-      -- cstring.strcpy(self.filename_nbr, [regentlib.string](args.argv[i]))
-      filename_given = true
-    elseif cstring.strcmp(args.argv[i], "-d") == 0 then
-      i = i + 1
-      self.dimension = c.atoi(args.argv[i])
-    end
-    i = i + 1
+  --     -- cstring.strcpy(self.filename_nbr, [regentlib.string](args.argv[i]))
+  --     filename_given = true
+  --   elseif cstring.strcmp(args.argv[i], "-d") == 0 then
+  --     i = i + 1
+  --     self.dimension = c.atoi(args.argv[i])
+  --   end
+  --   i = i + 1
+  -- end
+  -- if not filename_given then
+  --   c.printf("One of the input files missing\n\n")
+  --   print_usage_and_abort()
+  -- end
+  while i < tot do
+  	if i==1 then 
+  		self.filename_matrix = [regentlib.string](args.argv[i])
+  		i=i+1
+  		elseif i==2 then
+  			self.filename_ord = [regentlib.string](args.argv[i])
+  			i=i+1
+  			elseif i==3
+  				self.filename_nbr = [regentlib.string](args.argv[i])
+  				i=i+1
+  			else
+  				self.dimension = 2
+  			end
+  		end
+  	end
   end
-  if not filename_given then
-    c.printf("One of the input files missing\n\n")
-    print_usage_and_abort()
-  end
+
 end
 
 
