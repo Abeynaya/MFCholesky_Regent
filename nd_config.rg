@@ -49,7 +49,7 @@ terra Config:initialize_from_command()
       --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
       --   c.abort()
       -- end
-      cstring.strcpy(self.filename_matrix, args.argv[i])
+      cstring.strcpy(self.filename_matrix, [regentlib.string](args.argv[i]))
       
     elseif cstring.strcmp(args.argv[i], "-o") == 0 then
       i = i + 1
@@ -57,14 +57,14 @@ terra Config:initialize_from_command()
       --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
       --   c.abort()
       -- end
-      cstring.strcpy(self.filename_ord, args.argv[i])
+      cstring.strcpy(self.filename_ord, [regentlib.string](args.argv[i]))
     elseif cstring.strcmp(args.argv[i], "-n") == 0 then
       i = i + 1
       -- if not file_exists(args.argv[i]) then
       --   c.printf("File '%s' doesn't exist!\n", args.argv[i])
       --   c.abort()
       -- end
-      cstring.strcpy(self.filename_nbr, args.argv[i])
+      cstring.strcpy(self.filename_nbr, [regentlib.string](args.argv[i]))
       filename_given = true
     elseif cstring.strcmp(args.argv[i], "-d") == 0 then
       i = i + 1
