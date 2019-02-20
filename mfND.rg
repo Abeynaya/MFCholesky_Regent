@@ -269,7 +269,7 @@ task toplevel()
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
 	-- Read in the seperators
-	var rfrows = region(ispace(int2d, {x=num_seps, y= max_length}), int)
+	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
 
 	var code : int = 0
 	read_nodes_region(rfrows, ord, num_seps, code)
