@@ -395,12 +395,12 @@ task toplevel()
   		index = index-rfrows[{x=i, y=0}]
   	end
 
-  	-- var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
-  	-- for i=0, nrows do
-  	-- 	rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
-  	-- end
-  	-- -- Verify 
-  	-- verify(rrows, rcols, rvals, rx_unperm, rb)
+  	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
+  	for i=0, nrows do
+  		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
+  	end
+  	-- Verify 
+  	verify(rrows, rcols, rvals, rx_unperm, rb)
 
 
 
