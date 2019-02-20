@@ -4,9 +4,9 @@ local c = regentlib.c
 
 struct Config
 {
-  filename_matrix  : int8[256],
-  filename_ord    : int8[256],
-  filename_nbr	  : int8[256]
+  filename_matrix  : regentlib.string,
+  filename_ord    : regentlib.string,
+  filename_nbr	  : regentlib.string, 
   dimension       : int
 }
 
@@ -53,9 +53,17 @@ terra Config:initialize_from_command()
       
     elseif cstring.strcmp(args.argv[i], "-o") == 0 then
       i = i + 1
+      if not file_exists(args.argv[i]) then
+        c.printf("File '%s' doesn't exist!\n", args.argv[i])
+        c.abort()
+      end
       cstring.strcpy(self.filename_ord, args.argv[i])
     elseif cstring.strcmp(args.argv[i], "-n") == 0 then
       i = i + 1
+      if not file_exists(args.argv[i]) then
+        c.printf("File '%s' doesn't exist!\n", args.argv[i])
+        c.abort()
+      end
       cstring.strcpy(self.filename_nbr, args.argv[i])
       filename_given = true
     elseif cstring.strcmp(args.argv[i], "-d") == 0 then
