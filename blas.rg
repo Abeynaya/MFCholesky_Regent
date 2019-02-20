@@ -430,12 +430,12 @@ do
   fill(rxn, 0.0)
 
   -- Copy from x to xn 
-  var globid : int = start +sseps
+  var l : int = 0
   for i=0, snbrs do
-    while(rperm[globid] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
-      globid = globid+1
+    while(rperm[l] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
+      l= l+1
     end
-    rxn[{x=0,y=i}] = rx[{x=0,y=globid}]
+    rxn[{x=0,y=i}] = rx[{x=0,y=l}]
   end
   
   var bounds = rfront.bounds
