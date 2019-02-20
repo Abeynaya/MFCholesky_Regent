@@ -431,7 +431,9 @@ do
 
   -- Copy from x to xn 
   var l : int = 0
-  for i=0, snbrs do
+  for i=0, snbrs,1 do
+    -- var x = rperm[l]
+    -- var y = r
     while(rfrows[{x=front_idx+1, y=2+l}] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
       l= l+1
     end
