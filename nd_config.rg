@@ -90,7 +90,7 @@ terra Config:initialize_from_command()
   		elseif i==2 then
   			self.filename_ord = [regentlib.string](args.argv[i])
   			i=i+1
-  			elseif i==3
+  			elseif i==3 then
   				self.filename_nbr = [regentlib.string](args.argv[i])
   				i=i+1
   			else
