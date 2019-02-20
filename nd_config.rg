@@ -87,21 +87,33 @@ terra Config:initialize_from_command()
   		if i==1 then 
   			self.filename_matrix = [regentlib.string](args.argv[i])
   			i=i+1
-  			elseif i==2 then
-  				self.filename_ord = [regentlib.string](args.argv[i])
-  				i=i+1
-  				elseif i==3 then
-  					self.filename_nbr = [regentlib.string](args.argv[i])
-  					i=i+1
-  					elseif i==4 then
-  						self.dimension = 2
-  					end
-  				end
-  			end
+  		elseif i==2 then
+  			self.filename_ord = [regentlib.string](args.argv[i])
+  			i=i+1
+  		elseif i==3 then
+ 			self.filename_nbr = [regentlib.string](args.argv[i])
+  			i=i+1
+  		else 
+  			self.dimension = 2
   		end
   	end
+
+
 end
 
 
+-- var args = c.legion_runtime_get_input_args()
+-- var matrix_file : regentlib.string = ""
+-- var ord : regentlib.string = ""
+-- var nbr : regentlib.string = ""
+
+-- for i = 0, args.argc do
+--     if c.strcmp(args.argv[i], "-i") == 0 then
+--       matrix_file_path = args.argv[i+1]
+--     elseif c.strcmp(args.argv[i], "-s") == 0 then
+--       separator_file = args.argv[i+1]
+--     elseif c.strcmp(args.argv[i], "-c") == 0 then
+--       clusters_file = args.argv[i+1]
+--   end
 return Config
 
