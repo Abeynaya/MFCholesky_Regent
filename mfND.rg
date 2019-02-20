@@ -378,8 +378,8 @@ task toplevel()
   	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
   	-- Solve 
-  	var rx = region(ispace(int1d, nrows),double)
-  	var rb = region(ispace(int1d, nrows),double)
+  	var rx = region(ispace(int2d, {x=1,y=nrows}),double)
+  	var rb = region(ispace(int2d, {x=1,y=nrows}),double)
   	fill(rx, 2.0)
   	copy(rx, rb)
 
@@ -395,9 +395,9 @@ task toplevel()
   		index = index+rfrows[{x=i, y=0}]
   	end
 
-  	var rx_unperm = region(ispace(int1d, nrows), double)
+  	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
   	for i=0, nrows do
-  		rx_unperm[rperm[i]] = rx[i]
+  		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
   	end
   	-- Verify 
   	verify(rrows, rcols, rvals, rx_unperm, rb)

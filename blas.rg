@@ -374,7 +374,7 @@ terra dgemv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
 end
 
 -- Forward solve
-task fwd(rx : region(ispace(int1d), double),
+task fwd(rx : region(ispace(int2d), double),
           rfront : region(ispace(f2d), double),
           rfrows : region(ispace(int2d), int),
           rperm : region(ispace(int1d), int),
@@ -384,7 +384,7 @@ where reads(rfront, rfrows, rperm), reads writes(rx)
 do 
   var sseps : int = rfrows[{x=front_idx, y=0}]
   var snbrs : int = rfrows[{x=front_idx, y=1}]
-  var rxn = region(ispace(int1d, snbrs), double)
+  var rxn = region(ispace(int2d, {x=1, y=snbrs}), double)
   fill(rxn, 0.0)
   
   var bounds = rfront.bounds
@@ -411,13 +411,13 @@ for i=0, snbrs do
   while (rperm[globid]~= rfrows[{x=front_idx, y=sseps+2+i}]) do
     globid = globid+1
   end
-  rx[globid] = rx[globid]+rxn[i]
+  rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i}]
 end
 
 end
 
 -- Backward solve
-task bwd(rx : region(ispace(int1d), double),
+task bwd(rx : region(ispace(int2d), double),
           rfront : region(ispace(f2d), double),
           rfrows : region(ispace(int2d), int),
           rperm : region(ispace(int1d), int),
@@ -427,7 +427,7 @@ where reads(rfront, rfrows, rperm), reads writes(rx)
 do 
   var sseps : int = rfrows[{x=front_idx, y=0}]
   var snbrs : int = rfrows[{x=front_idx, y=1}]
-  var rxn = region(ispace(int1d, snbrs), double)
+  var rxn = region(ispace(int2d, {x=1,y=snbrs}), double)
   fill(rxn, 0.0)
 
   -- Copy from x to xn 
@@ -436,7 +436,7 @@ do
     while(rperm[globid] ~= rfrows[{x=rfrows, y=sseps+2+i}]) do
       globid = globid+1
     end
-    rxn[i] = rx[globid]
+    rxn[{x=0,y=i}] = rx[{x=0,y=globid}]
   end
   
   var bounds = rfront.bounds
@@ -461,24 +461,24 @@ end
 task verify(rrows : region(ispace(int1d), int),
              rcols : region(ispace(int1d), int),
              rvals : region(ispace(int1d), double),
-             rb   : region(ispace(int1d), double),
-             rx : region(ispace(int1d), double),
+             rb   : region(ispace(int2d), double),
+             rx : region(ispace(int2d), double),
              rperm : region(ispace(int1d), int))
 where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
 do 
 var nvals = rrows.bounds.hi - rrows.bounds.lo
-var nrows = rx.bounds.hi - rx.bounds.lo
+var nrows = rx.bounds.hi.y - rx.bounds.lo.y
 
 for i=0, nvals do
-  rb[rrows[i]] = rb[rrows[i]]-rvals[i]rx[rcols[i]]
+  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
   if rcols[i] ~= rrows[i] then
-    rb[rcols[i]] = rb[rcols[i]]-rvals[i]rx[rrows[i]]
+    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
   end 
 end
 
 var sum : double = 0.0
 for i=0, nrows do
-  sum = sum + rb[i]*rb[i]
+  sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
 end
 
 c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
