@@ -393,10 +393,10 @@ do
   var xhi = bounds.hi.x
   var yhi = bounds.hi.y
 
---   dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
---               0, start,0, start+sseps-1,
---               __physical(rfront)[0], __fields(rfront)[0],
---               __physical(rx)[0], __fields(rx)[0], 0)
+  dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              0, start,0, start+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rx)[0], __fields(rx)[0], 0)
 
 --   dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
 --               0,start ,0,start+sseps-1,
