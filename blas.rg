@@ -398,7 +398,8 @@ do
               __physical(rfront)[0], __fields(rfront)[0],
               __physical(rx)[0], __fields(rx)[0], 0)
 
-  dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
+  if snbrs ~= 0 then 
+    dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
               0,start ,0,start+sseps-1,
               0, 0, 0, snbrs, 
               __physical(rfront)[0], __fields(rfront)[0],
@@ -406,57 +407,63 @@ do
               __physical(rxn)[0], __fields(rxn)[0],0)
 
   -- some kind of extend add
-  var globid : int = start+sseps
-  var starti : int = rfrows[{x=front_idx, y=0}]+2
-  for i= starti, starti+snbrs, 1 do
-    while (rfrows[{x=front_idx, y=i}] ~= rperm[globid] ) do
-      globid = globid+1
+    var globid : int = start+sseps
+    var starti : int = rfrows[{x=front_idx, y=0}]+2
+    for i= starti, starti+snbrs, 1 do
+      while (rfrows[{x=front_idx, y=i}] ~= rperm[globid] ) do
+        globid = globid+1
+      end
+      rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i-starti}]
     end
-    rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i-starti}]
   end
 end
 
 -- Backward solve
--- task bwd(rx : region(ispace(int2d), double),
---           rfront : region(ispace(f2d), double),
---           rfrows : region(ispace(int2d), int),
---           rperm : region(ispace(int1d), int),
---           front_idx : int,
---           start : int)
--- where reads(rfront, rfrows, rperm), reads writes(rx)
--- do 
---   var sseps : int = rfrows[{x=front_idx, y=0}]
---   var snbrs : int = rfrows[{x=front_idx, y=1}]
---   var rxn = region(ispace(int2d, {x=1,y=snbrs}), double)
---   fill(rxn, 0.0)
+task bwd(rx : region(ispace(int2d), double),
+          rfront : region(ispace(f2d), double),
+          rfrows : region(ispace(int2d), int),
+          rperm : region(ispace(int1d), int),
+          front_idx : int,
+          last : int)
+where reads(rfront, rfrows, rperm), reads writes(rx)
+do 
+  var sseps : int = rfrows[{x=front_idx, y=0}]
+  var snbrs : int = rfrows[{x=front_idx, y=1}]
+  var rxn = region(ispace(int2d, {x=1,y=snbrs}), double)
+  fill(rxn, 0.0)
 
---   -- Copy from x to xn 
---   var l : int = start+sseps
---   for i=0, snbrs do
---     while(rperm[l] ~= rfrows[{x=front_idx, y=sseps+2+i}]) do
---       l= l+1
---     end
---     rxn[{x=0,y=i}] = rx[{x=0,y=l}]
---   end
+  var bounds = rfront.bounds
+  var xlo = bounds.lo.x
+  var ylo = bounds.lo.y
+  var xhi = bounds.hi.x
+  var yhi = bounds.hi.y
+
+  if snbrs ~= 0 then
+  -- Copy from x to xn 
+  var l : int = last
+  var starti : int = sseps+2
+  for i=starti, starti+snbrs, 1 do
+    while(rperm[l] ~= rfrows[{x=front_idx, y=i}]) do
+      l= l+1
+    end
+    rxn[{x=0,y=i-starti}] = rx[{x=0,y=l}]
+  end
   
---   var bounds = rfront.bounds
---   var xlo = bounds.lo.x
---   var ylo = bounds.lo.y
---   var xhi = bounds.hi.x
---   var yhi = bounds.hi.y
 
---   dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
---               rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
---               0,start ,0,start+sseps-1,
---               __physical(rfront)[0], __fields(rfront)[0],
---               __physical(rxn)[0], __fields(rxn)[0],
---               __physical(rx)[0], __fields(rx)[0], 1)
 
---   dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
---               0, start,0, start+sseps-1,
---               __physical(rfront)[0], __fields(rfront)[0],
---               __physical(rx)[0], __fields(rx)[0], 1)
--- end
+  dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
+              rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
+              0,last-sseps ,0,last-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rxn)[0], __fields(rxn)[0],
+              __physical(rx)[0], __fields(rx)[0], 1)
+  end
+
+  dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              0, last-sseps,0, last-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rx)[0], __fields(rx)[0], 1)
+end
 
 -- task verify(rrows : region(ispace(int1d), int),
 --              rcols : region(ispace(int1d), int),

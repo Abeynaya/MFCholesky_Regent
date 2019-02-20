@@ -390,11 +390,10 @@ task toplevel()
   		index = index+rfrows[{x=i, y=0}]
   	end
 
-  	-- index = 0
-  	-- for i=0, num_seps do
-  	-- 	bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
-  	-- 	index = index+rfrows[{x=i, y=0}]
-  	-- end
+  	for i=num_seps-1, -1, -1 do
+  		bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
+  		index = index-rfrows[{x=i, y=0}]
+  	end
 
   	-- var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
   	-- for i=0, nrows do
