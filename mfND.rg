@@ -8,6 +8,8 @@ local std = terralib.includec("stdlib.h")
 
 -- Include blas and lapack solvers
 local linalg = require("blas")
+-- Include config file for command line arguments
+local Config = require("nd_config.rg")
 
 -- declare fortran-order 2D indexspace
 local f2d = linalg.f2d
@@ -229,11 +231,14 @@ end
 
 
 task toplevel()
+	var config : Config
+	config:initialize_from_command()
+
 	-- Read in the sparse matrix stored in matrix market file
 	var nrows : int, ncols : int, nz : int
-	var matrix_file : regentlib.string = "lapl_5_2.mtx"
+	var matrix_file  = config.filename_matrix
 	
-	var d : int = 2
+	var d = config.dimension
 
 	nz 	  =  read_nz(matrix_file)
 	var rrows = region(ispace(int1d, nz+1), int)
@@ -252,8 +257,8 @@ task toplevel()
 	var r_perm = region(ispace(f2d, {y=nrows,x=ncols}), double)
 
 	-- Ordering and neighbors file
-	var ord : regentlib.string = "ord.txt"
-	var nbr : regentlib.string = "nbr.txt"
+	var ord = config.filename_ord
+	var nbr = config.filename_nbr
 
 	-- Limits of rrows
 	var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
@@ -264,7 +269,7 @@ task toplevel()
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
 	-- Read in the seperators
-	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
+	var rfrows = region(ispace(int2d, {x=num_seps, y= max_length}), int)
 
 	var code : int = 0
 	read_nodes_region(rfrows, ord, num_seps, code)
@@ -357,12 +362,17 @@ task toplevel()
 			-- Extend add to the parent
 			if l~= 0 then
 				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
-				c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
+				-- c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
 				var rparent = pfronts[{x=par_idx, y=par_idx}]
 				extend_add(rparent, par_idx, rchild, si, rfrows)
 			end
 		end
 	end
+
+	__fence(__execution, __block)
+	var ts_end = c.legion_get_current_time_in_micros()
+  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
+
 
 	-- Print fronts
 	for si=0, num_seps do
@@ -380,33 +390,11 @@ task toplevel()
 			end
 			c.printf("\n")
 		end
-		c.printf("\n \n ")
+		c.printf("\n \n")
 	end
 
 
-	-- c.printf("SUCCESS: Cholesky decomposition found\n")
-
-
-	-- --Print matrix entries
-	-- -- for i=0, nrows do
-	-- -- 	for j=0, ncols do
-	-- -- 		var d : f2d = {y=i , x=j}
-	-- -- 		if r_perm[d]==0.0 then
-	-- -- 			c.printf("%2.1d",[int](r_perm[d]))
-	-- -- 		else
-	-- -- 			c.printf("%8.4f ", r_perm[d])
-	-- -- 		end
-	-- -- 	end
-	-- -- 	c.printf("\n")
-	-- -- end
-
-
-	__fence(__execution, __block)
-	var ts_end = c.legion_get_current_time_in_micros()
-  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
-
-  	-- Verify results
-  	-- verify_result(nrows, r_org, r_perm)
+	
    
 
 end

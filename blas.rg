@@ -286,7 +286,7 @@ do
       l = l+1
     end
     rind[i-start]=l-2
-    c.printf("print l = %d\n", rind[i-start])
+    -- c.printf("print l = %d\n", rind[i-start])
   end
 
   var pbds = rparent.bounds
@@ -296,13 +296,14 @@ do
     var fj = rind[j]
     for i=0, snbrs, 1 do
       var fi = rind[i]
-      -- c.printf("fx =%d, fy=%d, cix=%d, ciy = %d\n", fi, fj, i+start-2, j+start-2)
       rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] = rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] 
                                                 + rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
     end
   end
 
 end
+
+
 
 return linalg
 -- task verify_result(n : int,
