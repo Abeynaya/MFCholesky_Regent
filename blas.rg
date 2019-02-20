@@ -320,7 +320,7 @@ terra dtrsv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
   -- var side : rawstring = 'R'
   var uplo : rawstring = 'L'
   var trans : rawstring = ''
-  if code == 0
+  if code == 0 then
     trans ='N'
   else
     trans = 'T'
@@ -348,7 +348,9 @@ terra dgemv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
                   prC : c.legion_physical_region_t,
                   fldC : c.legion_field_id_t,
                   code : int)
-  if code == 0
+  
+  var trans : rawstring = ''
+  if code == 0 then 
     trans ='N'
   else
     trans = 'T'
@@ -372,13 +374,14 @@ terra dgemv_terra(xloA : int, yloA:int, xhiA: int, yhiA: int,
 end
 
 -- Forward solve
-terra fwd(rx : region(ispace(int1d), double),
+task fwd(rx : region(ispace(int1d), double),
           rfront : region(ispace(f2d), double),
           rfrows : region(ispace(int2d), int),
           rperm : region(ispace(int1d), int),
           front_idx : int,
           start : int)
-
+where reads(rfront, rfrows, rperm), reads writes(rx)
+do 
   var sseps : int = rfrows[{x=front_idx, y=0}]
   var snbrs : int = rfrows[{x=front_idx, y=1}]
   var rxn = region(ispace(int1d, snbrs), double)
@@ -414,12 +417,14 @@ end
 end
 
 -- Backward solve
-terra bwd(rx : region(ispace(int1d), double),
+task bwd(rx : region(ispace(int1d), double),
           rfront : region(ispace(f2d), double),
           rfrows : region(ispace(int2d), int),
           rperm : region(ispace(int1d), int),
           front_idx : int,
           start : int)
+where reads(rfront, rfrows, rperm), reads writes(rx)
+do 
   var sseps : int = rfrows[{x=front_idx, y=0}]
   var snbrs : int = rfrows[{x=front_idx, y=1}]
   var rxn = region(ispace(int1d, snbrs), double)
@@ -453,13 +458,14 @@ terra bwd(rx : region(ispace(int1d), double),
               __physical(rx)[0], __fields(rx)[0], 1)
 end
 
-terra verify(rrows : region(ispace(int1d), int),
+task verify(rrows : region(ispace(int1d), int),
              rcols : region(ispace(int1d), int),
              rvals : region(ispace(int1d), double),
              rb   : region(ispace(int1d), double),
              rx : region(ispace(int1d), double),
              rperm : region(ispace(int1d), int))
-
+where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
+do 
 var nvals = rrows.bounds.hi - rrows.bounds.lo
 var nrows = rx.bounds.hi - rx.bounds.lo
 
