@@ -417,73 +417,73 @@ end
 end
 
 -- Backward solve
-task bwd(rx : region(ispace(int2d), double),
-          rfront : region(ispace(f2d), double),
-          rfrows : region(ispace(int2d), int),
-          rperm : region(ispace(int1d), int),
-          front_idx : int,
-          start : int)
-where reads(rfront, rfrows, rperm), reads writes(rx)
-do 
-  var sseps : int = rfrows[{x=front_idx, y=0}]
-  var snbrs : int = rfrows[{x=front_idx, y=1}]
-  var rxn = region(ispace(int2d, {x=1,y=snbrs}), double)
-  fill(rxn, 0.0)
+-- task bwd(rx : region(ispace(int2d), double),
+--           rfront : region(ispace(f2d), double),
+--           rfrows : region(ispace(int2d), int),
+--           rperm : region(ispace(int1d), int),
+--           front_idx : int,
+--           start : int)
+-- where reads(rfront, rfrows, rperm), reads writes(rx)
+-- do 
+--   var sseps : int = rfrows[{x=front_idx, y=0}]
+--   var snbrs : int = rfrows[{x=front_idx, y=1}]
+--   var rxn = region(ispace(int2d, {x=1,y=snbrs}), double)
+--   fill(rxn, 0.0)
 
-  -- Copy from x to xn 
-  var globid : int = start +sseps
-  for i=0, snbrs do
-    while(rperm[globid] ~= rfrows[{x=rfrows, y=sseps+2+i}]) do
-      globid = globid+1
-    end
-    rxn[{x=0,y=i}] = rx[{x=0,y=globid}]
-  end
+--   -- Copy from x to xn 
+--   var globid : int = start +sseps
+--   for i=0, snbrs do
+--     while(rperm[globid] ~= rfrows[{x=rfrows, y=sseps+2+i}]) do
+--       globid = globid+1
+--     end
+--     rxn[{x=0,y=i}] = rx[{x=0,y=globid}]
+--   end
   
-  var bounds = rfront.bounds
-  var xlo = bounds.lo.x
-  var ylo = bounds.lo.y
-  var xhi = bounds.hi.x
-  var yhi = bounds.hi.y
+--   var bounds = rfront.bounds
+--   var xlo = bounds.lo.x
+--   var ylo = bounds.lo.y
+--   var xhi = bounds.hi.x
+--   var yhi = bounds.hi.y
 
-  dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
-              rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
-              0,start ,0,start+sseps-1,
-              __physical(rfront)[0], __fields(rfront)[0],
-              __physical(rxn)[0], __fields(rxn)[0],
-              __physical(rx)[0], __fields(rx)[0], 1)
+--   dgemv_terra(xlo, ylo+sseps, xlo+sseps-1, yhi, 
+--               rxn.bounds.lo.x, rxn.bounds.lo.y, rxn.bounds.hi.x, rxn.bounds.hi.y, 
+--               0,start ,0,start+sseps-1,
+--               __physical(rfront)[0], __fields(rfront)[0],
+--               __physical(rxn)[0], __fields(rxn)[0],
+--               __physical(rx)[0], __fields(rx)[0], 1)
 
-  dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
-              0, start,0, start+sseps-1,
-              __physical(rfront)[0], __fields(rfront)[0],
-              __physical(rx)[0], __fields(rx)[0], 1)
-end
+--   dtrsv_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+--               0, start,0, start+sseps-1,
+--               __physical(rfront)[0], __fields(rfront)[0],
+--               __physical(rx)[0], __fields(rx)[0], 1)
+-- end
 
-task verify(rrows : region(ispace(int1d), int),
-             rcols : region(ispace(int1d), int),
-             rvals : region(ispace(int1d), double),
-             rb   : region(ispace(int2d), double),
-             rx : region(ispace(int2d), double),
-             rperm : region(ispace(int1d), int))
-where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
-do 
-var nvals = rrows.bounds.hi - rrows.bounds.lo
-var nrows = rx.bounds.hi.y - rx.bounds.lo.y
+-- task verify(rrows : region(ispace(int1d), int),
+--              rcols : region(ispace(int1d), int),
+--              rvals : region(ispace(int1d), double),
+--              rb   : region(ispace(int2d), double),
+--              rx : region(ispace(int2d), double),
+--              rperm : region(ispace(int1d), int))
+-- where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
+-- do 
+-- var nvals = rrows.bounds.hi - rrows.bounds.lo
+-- var nrows = rx.bounds.hi.y - rx.bounds.lo.y
 
-for i=0, nvals do
-  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
-  if rcols[i] ~= rrows[i] then
-    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
-  end 
-end
+-- for i=0, nvals do
+--   rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
+--   if rcols[i] ~= rrows[i] then
+--     rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
+--   end 
+-- end
 
-var sum : double = 0.0
-for i=0, nrows do
-  sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
-end
+-- var sum : double = 0.0
+-- for i=0, nrows do
+--   sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
+-- end
 
-c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
+-- c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
 
-end
+-- end
 
 
 return linalg
