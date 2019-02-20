@@ -430,9 +430,11 @@ do
   fill(rxn, 0.0)
 
   -- Copy from x to xn 
-  var l : int = start+sseps
+  var f : int = 0
+  f = start
+  var l : int = f+sseps
   for i=0, snbrs do
-    while rfrows[{x=front_idx, y=i}]~=0 do
+    while rfrows[{x=front_idx, y=f+sseps+i}]~=0 do
       l= l+1
     end
     rxn[{x=0,y=i}] = rx[{x=0,y=l}]
