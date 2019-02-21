@@ -238,7 +238,7 @@ task toplevel()
 	var nrows : int, ncols : int, nz : int
 	var matrix_file  = config.filename_matrix
 	
-	var d = config.dimension
+	-- var d = config.dimension
 
 	nz 	  =  read_nz(matrix_file)
 	var rrows = region(ispace(int1d, nz+1), int)
@@ -257,15 +257,16 @@ task toplevel()
 	var nbr = config.filename_nbr
 
 	-- Limits of rrows
-	var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
-	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
+	-- var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
+	-- var max_length : int = [int](2*cmath.pow(N, d-1)+1)
+	var max_length : int = nrows 
 
 	-- Get levels
 	var nlvls : int = get_levels(ord)
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
 	-- Read in the seperators
-	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
+	var rfrows = region(ispace(int2d, {x=num_seps, y= max_length}), int)
 
 	var code : int = 0
 	read_nodes_region(rfrows, ord, num_seps, code)
