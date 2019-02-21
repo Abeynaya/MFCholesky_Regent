@@ -420,9 +420,9 @@ task toplevel()
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
   	-- print b
-  	for i=0, nrows do 
-  		c.printf("%e\n", rb[{x=0,y=i}])
-  	end
+  	-- for i=0, nrows do 
+  	-- 	c.printf("%e\n", rb[{x=0,y=i}])
+  	-- end
 
 
 	-- -- Print fronts
