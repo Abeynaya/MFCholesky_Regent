@@ -488,7 +488,7 @@ for i=0, nrows do
   sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
 end
 
-c.printf("||Ax-b|| = %8.4f", cmath.pow(sum, 0.5))
+c.printf("||Ax-b|| = %e\n", cmath.pow(sum, 0.5))
 
 end
 
