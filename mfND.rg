@@ -199,37 +199,6 @@ do
 
 end
 
--- Verify results: LL^T = A
-task verify_result(n : int,
-                   org : region(ispace(f2d), double),
-                   res : region(ispace(f2d), double))
-where reads(org, res)
-do
-  c.printf("verifying results...\n")
-  var check = true
-  for x = 0, n do
-    for y = x, n do
-      var v = org[f2d { x = x, y = y }]
-      var sum : double = 0
-      for k = 0, x + 1 do
-        sum += res[f2d { x = k, y = y }] * res[f2d { x = k, y = x }]
-      end
-      if cmath.fabs(sum - v) > 1e-6 then
-        c.printf("error at (%d, %d) : %.3f, %.3f\n", y, x, sum, v)
-        check = false
-        break;
-      end
-    end
-  end
-  if check then
-  	c.printf("VERIFIED: Cholesky decomposition successful\n")
-  else 
-  	c.printf(" Cholesky decomposition incorrect\n")
-  end
-
-end
-
-
 task toplevel()
 	var config : Config
 	config:initialize_from_command()
@@ -238,8 +207,7 @@ task toplevel()
 	var nrows : int, ncols : int, nz : int
 	var matrix_file  = config.filename_matrix
 	
-	-- var d = config.dimension
-
+	var d = config.dimension
 	nz 	  =  read_nz(matrix_file)
 	var rrows = region(ispace(int1d, nz+1), int)
 	var rcols = region(ispace(int1d, nz+1), int)
@@ -257,16 +225,16 @@ task toplevel()
 	var nbr = config.filename_nbr
 
 	-- Limits of rrows
-	-- var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
-	-- var max_length : int = [int](2*cmath.pow(N, d-1)+1)
-	var max_length : int = nrows 
+	-- var max_length : int = nrows 
+	var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
+	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
 
 	-- Get levels
 	var nlvls : int = get_levels(ord)
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
 	-- Read in the seperators
-	var rfrows = region(ispace(int2d, {x=num_seps, y= max_length}), int)
+	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
 
 	var code : int = 0
 	read_nodes_region(rfrows, ord, num_seps, code)
@@ -276,13 +244,11 @@ task toplevel()
 	code = 1
 	read_nodes_region(rfrows, nbr, num_seps, code)
 	c.printf("SUCCESS: Read in the neighbors\n")
-
 	
 	-- Build tree 
 	var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
 	build_tree(nlvls, rtree)
 	c.printf("SUCCESS: Built tree of separators\n")
-
 
 	-- permutation vector
 	var rperm = region(ispace(int1d, nrows), int)
@@ -367,7 +333,6 @@ task toplevel()
 			-- Extend add to the parent
 			if l~= 0 then
 				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
-				-- c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
 				var rparent = pfronts[{x=par_idx, y=par_idx}]
 				extend_add(rparent, par_idx, rchild, si, rfrows)
 			end
@@ -384,47 +349,26 @@ task toplevel()
   	fill(rx, 2.0)
   	copy(rx, rb)
 
+  	-- Forward solve
   	var index : int = 0
   	for i=0, num_seps do
-  		-- var rA
   		fwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
   		index = index+rfrows[{x=i, y=0}]
   	end
 
-  	-- -- print x
-  	-- for i=0, nrows do 
-  	-- 	c.printf("%8.4f\n", rx[{x=0,y=i}])
-  	-- end
-
-
+  	-- backward solve
   	for i=num_seps-1, -1, -1 do
   		bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
   		index = index-rfrows[{x=i, y=0}]
   	end
-
-  	-- -- print x
-  	-- for i=0, nrows do 
-  	-- 	c.printf("%8.4f\n", rx[{x=0,y=i}])
-  	-- end
 
   	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
   	for i=0, nrows do
   		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
   	end
 
-  	-- -- print x
-  	-- for i=0, nrows do 
-  	-- 	c.printf("%8.4f\n", rx_unperm[{x=0,y=i}])
-  	-- end
-
-  	-- Verify 
+  	-- Verify Ax == b
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
-
-  	-- print b
-  	-- for i=0, nrows do 
-  	-- 	c.printf("%e\n", rb[{x=0,y=i}])
-  	-- end
-
 
 	-- -- Print fronts
 	-- for si=num_seps-1, num_seps do
