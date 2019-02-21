@@ -390,10 +390,10 @@ task toplevel()
   		index = index+rfrows[{x=i, y=0}]
   	end
 
-  	-- print x
-  	for i=0, nrows do 
-  		c.printf("%8.4f\n", rx[{x=0,y=i}])
-  	end
+  	-- -- print x
+  	-- for i=0, nrows do 
+  	-- 	c.printf("%8.4f\n", rx[{x=0,y=i}])
+  	-- end
 
 
   	for i=num_seps-1, -1, -1 do
@@ -401,15 +401,21 @@ task toplevel()
   		index = index-rfrows[{x=i, y=0}]
   	end
 
-  	-- print x
-  	for i=0, nrows do 
-  		c.printf("%8.4f\n", rx[{x=0,y=i}])
-  	end
+  	-- -- print x
+  	-- for i=0, nrows do 
+  	-- 	c.printf("%8.4f\n", rx[{x=0,y=i}])
+  	-- end
 
   	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
   	for i=0, nrows do
   		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
   	end
+
+  	-- print x
+  	for i=0, nrows do 
+  		c.printf("%8.4f\n", rx_unperm[{x=0,y=i}])
+  	end
+
   	-- Verify 
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
