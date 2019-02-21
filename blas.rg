@@ -473,8 +473,8 @@ task verify(rrows : region(ispace(int1d), int),
              rperm : region(ispace(int1d), int))
 where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
 do 
-var nvals = [int](rrows.bounds.hi - rrows.bounds.lo)
-var nrows = rx.bounds.hi.y - rx.bounds.lo.y
+var nvals = [int](rrows.bounds.hi - rrows.bounds.lo + 1)
+var nrows = rx.bounds.hi.y - rx.bounds.lo.y + 1
 
 var sum_b : double = 0.0
 for i=0, nrows do
