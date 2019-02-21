@@ -411,17 +411,17 @@ task toplevel()
   		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
   	end
 
-  	-- print x
-  	for i=0, nrows do 
-  		c.printf("%8.4f\n", rx_unperm[{x=0,y=i}])
-  	end
+  	-- -- print x
+  	-- for i=0, nrows do 
+  	-- 	c.printf("%8.4f\n", rx_unperm[{x=0,y=i}])
+  	-- end
 
   	-- Verify 
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
   	-- print b
   	for i=0, nrows do 
-  		c.printf("%8.4f\n", rb[{x=0,y=i}])
+  		c.printf("%e\n", rb[{x=0,y=i}])
   	end
 
 
