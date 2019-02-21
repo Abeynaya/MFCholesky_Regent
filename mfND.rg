@@ -402,6 +402,10 @@ task toplevel()
   	-- Verify 
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
+  	-- print b
+  	for i=0, nrows do 
+  		c.printf("%8.4f\n", rb[{x=0,y=i}])
+  	end
 
 
 	-- -- Print fronts
