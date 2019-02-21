@@ -476,6 +476,12 @@ do
 var nvals = [int](rrows.bounds.hi - rrows.bounds.lo)
 var nrows = rx.bounds.hi.y - rx.bounds.lo.y
 
+var sum_b : double = 0.0
+for i=0, nrows do
+  sum_b = sum_b + rb[{x=0,y=i}]*rb[{x=0,y=i}]
+end
+
+
 for i= 0, nvals do
   rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=rcols[i]}]
   if rcols[i] ~= rrows[i] then
@@ -488,7 +494,7 @@ for i=0, nrows do
   sum = sum + rb[{x=0,y=i}]*rb[{x=0,y=i}]
 end
 
-c.printf("||Ax-b|| = %e\n", cmath.pow(sum, 0.5))
+c.printf("||Ax-b||/ ||b|| = %e\n", cmath.pow(sum, 0.5)/cmath.pow(sum_b,0.5))
 
 end
 
