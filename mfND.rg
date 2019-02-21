@@ -400,7 +400,7 @@ task toplevel()
   		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
   	end
   	-- Verify 
-  	verify(rrows, rcols, rvals, rx_unperm, rb)
+  	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
 
 
