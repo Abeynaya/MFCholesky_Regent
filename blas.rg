@@ -477,9 +477,9 @@ var nvals = [int](rrows.bounds.hi - rrows.bounds.lo)
 var nrows = rx.bounds.hi.y - rx.bounds.lo.y
 
 for i= 0, nvals do
-  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]rx[{x=0,y=rcols[i]}]
+  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=rcols[i]}]
   if rcols[i] ~= rrows[i] then
-    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]rx[{x=0,y=rrows[i]}]
+    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]*rx[{x=0,y=rrows[i]}]
   end 
 end
 
