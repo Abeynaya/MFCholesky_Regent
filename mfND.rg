@@ -289,7 +289,7 @@ task toplevel()
 			max_size = size 
 		end
 		-- Check if the bounds make sense
-		-- c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
+		c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
@@ -312,6 +312,7 @@ task toplevel()
 
 	-- Form the fronts for each interface
 	for si=0, num_seps do
+		c.printf("si = %d",si)
 		var front = pfronts[si]
 		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
 	end
