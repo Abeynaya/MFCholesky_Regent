@@ -134,7 +134,7 @@ end
 
 -- Add colored rectangle 
 terra add_colored_rect(coloring : c.legion_domain_point_coloring_t,
-                       color 	: int2d,
+                       color 	: int1d,
                        lo 		: int2d,
                        hi 		: int2d)
   var rect = c.legion_rect_2d_t{ lo = lo:to_point(), hi = hi:to_point()}
