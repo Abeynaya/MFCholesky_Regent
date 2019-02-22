@@ -307,80 +307,80 @@ task toplevel()
 	c.printf("SUCCESS: Partitioning done\n")
 
 
-	__fence(__execution, __block)
-    var ts_start = c.legion_get_current_time_in_micros()
+	-- __fence(__execution, __block)
+ --    var ts_start = c.legion_get_current_time_in_micros()
 
-	-- Form the fronts for each interface
-	for si=0, num_seps do
-		var front = pfronts[{x=si, y=si}]
-		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
-	end
-
-	-- Print fronts
+	-- -- Form the fronts for each interface
 	-- for si=0, num_seps do
-	-- 	var bds = pfronts[{x=si, y=si}].bounds 
-	-- 	var nr = bds.hi.y - bds.lo.x +1
-	-- 	var nc = bds.hi.x - bds.lo.x +1
-	-- 	for i=0, nr do
-	-- 		for j=0, nc do
-	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-	-- 			if rfronts[d]==0.0 then
-	-- 				c.printf("%2.1d",[int](rfronts[d]))
-	-- 			else
-	-- 				c.printf("%3.0f ", rfronts[d])
-	-- 			end	
-	-- 		end
-	-- 		c.printf("\n")
-	-- 	end
-	-- 	c.printf("\n \n ")
+	-- 	var front = pfronts[{x=si, y=si}]
+	-- 	fill_matrix(rfrows, si, rrows, rcols, rvals, front)
 	-- end
 
-	for l=nlvls-1, -1, -1 do
-		var nseps_at_l :int = cmath.pow(2,l)
-		for i=0, nseps_at_l, 1 do
-			var si : int = rtree[{x=l, y=i}]
-			var rchild = pfronts[{x=si, y=si}]
-			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
+	-- -- Print fronts
+	-- -- for si=0, num_seps do
+	-- -- 	var bds = pfronts[{x=si, y=si}].bounds 
+	-- -- 	var nr = bds.hi.y - bds.lo.x +1
+	-- -- 	var nc = bds.hi.x - bds.lo.x +1
+	-- -- 	for i=0, nr do
+	-- -- 		for j=0, nc do
+	-- -- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+	-- -- 			if rfronts[d]==0.0 then
+	-- -- 				c.printf("%2.1d",[int](rfronts[d]))
+	-- -- 			else
+	-- -- 				c.printf("%3.0f ", rfronts[d])
+	-- -- 			end	
+	-- -- 		end
+	-- -- 		c.printf("\n")
+	-- -- 	end
+	-- -- 	c.printf("\n \n ")
+	-- -- end
 
-			-- Extend add to the parent
-			if l~= 0 then
-				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
-				var rparent = pfronts[{x=par_idx, y=par_idx}]
-				extend_add(rparent, par_idx, rchild, si, rfrows)
-			end
-		end
-	end
+	-- for l=nlvls-1, -1, -1 do
+	-- 	var nseps_at_l :int = cmath.pow(2,l)
+	-- 	for i=0, nseps_at_l, 1 do
+	-- 		var si : int = rtree[{x=l, y=i}]
+	-- 		var rchild = pfronts[{x=si, y=si}]
+	-- 		factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
 
-	__fence(__execution, __block)
-	var ts_end = c.legion_get_current_time_in_micros()
-  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
+	-- 		-- Extend add to the parent
+	-- 		if l~= 0 then
+	-- 			var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
+	-- 			var rparent = pfronts[{x=par_idx, y=par_idx}]
+	-- 			extend_add(rparent, par_idx, rchild, si, rfrows)
+	-- 		end
+	-- 	end
+	-- end
 
-  	-- Solve 
-  	var rx = region(ispace(int2d, {x=1,y=nrows}),double)
-  	var rb = region(ispace(int2d, {x=1,y=nrows}),double)
-  	fill(rx, 2.0)
-  	copy(rx, rb)
+	-- __fence(__execution, __block)
+	-- var ts_end = c.legion_get_current_time_in_micros()
+ --  	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
-  	-- Forward solve
-  	var index : int = 0
-  	for i=0, num_seps do
-  		fwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
-  		index = index+rfrows[{x=i, y=0}]
-  	end
+ --  	-- Solve 
+ --  	var rx = region(ispace(int2d, {x=1,y=nrows}),double)
+ --  	var rb = region(ispace(int2d, {x=1,y=nrows}),double)
+ --  	fill(rx, 2.0)
+ --  	copy(rx, rb)
 
-  	-- backward solve
-  	for i=num_seps-1, -1, -1 do
-  		bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
-  		index = index-rfrows[{x=i, y=0}]
-  	end
+ --  	-- Forward solve
+ --  	var index : int = 0
+ --  	for i=0, num_seps do
+ --  		fwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
+ --  		index = index+rfrows[{x=i, y=0}]
+ --  	end
 
-  	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
-  	for i=0, nrows do
-  		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
-  	end
+ --  	-- backward solve
+ --  	for i=num_seps-1, -1, -1 do
+ --  		bwd(rx, pfronts[{x=i,y=i}], rfrows, rperm, i, index)
+ --  		index = index-rfrows[{x=i, y=0}]
+ --  	end
 
-  	-- Verify Ax == b
-  	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
+ --  	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
+ --  	for i=0, nrows do
+ --  		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
+ --  	end
+
+ --  	-- Verify Ax == b
+ --  	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
   	-- for i=0, nrows do
   	-- 	c.printf("%8.4f\n", rb[{x=0,y=i}])
