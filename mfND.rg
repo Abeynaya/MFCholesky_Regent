@@ -271,25 +271,37 @@ task toplevel()
 	var prev_size 		: int64 = 0
 	var size 	  		: int64 = 0
 	var sep_position = region(ispace(int1d, num_seps), int)
+	var max_size 		: int64 = 0
 
 	for si=0, num_seps do
 		size = rfrows[{x=si, y=0}]+ rfrows[{x=si,y=1}]
-		var lo : int2d = {prev_size,prev_size}
-		var hi : int2d = {prev_size+size-1, prev_size+size-1}
-		var color : int2d = {si,si}
+		-- var lo : int2d = {prev_size,prev_size}
+		-- var hi : int2d = {prev_size+size-1, prev_size+size-1}
+		-- var color : int2d = {si,si}
+		var lo : int2d = {prev_size,0}
+		var hi : int2d = {prev_size+size-1, size-1}
+		var color : int1d = si
+		
 		add_colored_rect(coloring, color, lo, hi)
 		-- Update prev_size
 		prev_size = prev_size + size
+		if size > max_size then
+			max_size = size 
+		end
 		-- Check if the bounds make sense
 		-- c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
-	var rfronts_size = prev_size
-	var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
+	-- var rfronts_size = prev_size
+	-- var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
+	var rfronts_size = max_size
+	var rfronts = region(ispace(f2d, {y=max_size, x = prev_size}), double)
 
+	c.printf("Here\n")
 	-- Create the partition 
-	var pspace = ispace(int2d, {x=num_seps, y=num_seps})
+	-- var pspace = ispace(int2d, {x=num_seps, y=num_seps})
+	var pspace = ispace(int1d, num_seps)
 	var pfronts = partition(disjoint, rfronts, coloring, pspace)
 
 	c.printf("SUCCESS: Partitioning done\n")
