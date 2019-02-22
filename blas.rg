@@ -482,10 +482,10 @@ for i=0, nrows do
 end
 
 
-for i= 0, nvals do
-  rb[{x=0,y=rrows[i+1]}] = rb[{x=0,y=rrows[i+1]}]-rvals[i+1]*rx[{x=0,y=rcols[i+1]}]
-  if rcols[i+1] ~= rrows[i+1] then
-    rb[{x=0,y=rcols[i+1]}] = rb[{x=0,y=rcols[i+1]}]-rvals[i+1]*rx[{x=0,y=rrows[i+1]}]
+for i= 1, nvals+1 do
+  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=rcols[i]}]
+  if rcols[i] ~= rrows[i] then
+    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]*rx[{x=0,y=rrows[i]}]
   end 
 end
 
