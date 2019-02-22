@@ -370,6 +370,11 @@ task toplevel()
   	-- Verify Ax == b
   	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
 
+  	for i=0, nrows do
+  		c.printf("%8.4f\n", rb[{x=0,y=i}])
+  	end
+
+
 	-- -- Print fronts
 	-- for si=num_seps-1, num_seps do
 	-- 	var bds = pfronts[{x=si, y=si}].bounds 
