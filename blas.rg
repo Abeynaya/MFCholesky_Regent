@@ -473,7 +473,7 @@ task verify(rrows : region(ispace(int1d), int),
              rperm : region(ispace(int1d), int))
 where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
 do 
-var nvals = rrows[0]
+var nvals = (int)[rrows.bounds.hi - rrows.bounds.lo +1]
 var nrows = rx.bounds.hi.y - rx.bounds.lo.y + 1
 
 var sum_b : double = 0.0
@@ -482,7 +482,7 @@ for i=0, nrows do
 end
 
 
-for i= 1, nvals+1 do
+for i= 0, nvals do
   rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=rcols[i]}]
   if rcols[i] ~= rrows[i] then
     rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]*rx[{x=0,y=rrows[i]}]
