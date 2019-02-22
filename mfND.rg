@@ -80,7 +80,7 @@ do
 	var v : int[0]
 	for i=0, num_seps do
 		read_char(fp, v) -- Skip
-		read_char(fp, v) -- skip
+		-- read_char(fp, v) -- skip
 
 		read_char(fp, v) 
 
@@ -233,7 +233,7 @@ task toplevel()
 	var nlvls : int = get_levels(ord)
 	var num_seps : int = cmath.pow(2,nlvls)-1
 
-	-- Read in the seperators
+	-- Read in the separators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
 
 	var code : int = 0
