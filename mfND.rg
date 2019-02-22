@@ -289,7 +289,7 @@ task toplevel()
 			max_size = size 
 		end
 		-- Check if the bounds make sense
-		c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
+		c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", color,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
