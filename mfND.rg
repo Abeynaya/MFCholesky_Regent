@@ -80,7 +80,7 @@ do
 	var v : int[0]
 	for i=0, num_seps do
 		read_char(fp, v) -- Skip
-		-- read_char(fp, v) -- skip
+		read_char(fp, v) -- skip
 
 		read_char(fp, v) 
 
