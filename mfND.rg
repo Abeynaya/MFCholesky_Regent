@@ -80,7 +80,7 @@ do
 	var v : int[0]
 	for i=0, num_seps do
 		read_char(fp, v) -- Skip
-		read_char(fp, v) -- skip
+		-- read_char(fp, v) -- skip
 
 		read_char(fp, v) 
 
@@ -108,14 +108,31 @@ do
 	c.fclose(fp)
 end
 
-terra get_levels(file : regentlib.string)
+task read_tree(file : regentlib.string,
+			   rtree : region(ispace(int1d),int))
+where writes(rtree)
+do
 	var fp = c.fopen([rawstring](file), "rb")
-	var nlvls : int = 0
+	var nlines : int[0]
+	read_char(fp, nlines) -- num of lines
+
+	var v : int[0]
+	for i=0, nlines do
+		read_char(fp, v) -- skip 
+		read_char(fp, v) -- parent 
+		rtree[i]=v		
+	end
+end
+
+terra get_nseps(file : regentlib.string)
+	var fp = c.fopen([rawstring](file), "rb")
+	-- var nlvls : int = 0
 	var nseps : int = 0 
 
-	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
+	-- c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
+	c.fscanf(fp, "%d\n", &nseps)
 	c.fclose(fp) 
-	return nlvls
+	return nseps
 end
 
 task build_tree(nlvls : int,
@@ -223,6 +240,7 @@ task toplevel()
 	-- Ordering and neighbors file
 	var ord = config.filename_ord
 	var nbr = config.filename_nbr
+	var tree = config.filename_tree
 
 	-- Limits of rrows
 	-- var max_length : int = nrows 
@@ -230,8 +248,8 @@ task toplevel()
 	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
 
 	-- Get levels
-	var nlvls : int = get_levels(ord)
-	var num_seps : int = cmath.pow(2,nlvls)-1
+	--var nlvls : int = get_levels(ord)
+	var num_seps : int = get_nseps(ord)
 
 	-- Read in the separators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
@@ -246,9 +264,11 @@ task toplevel()
 	c.printf("SUCCESS: Read in the neighbors\n")
 	
 	-- Build tree 
-	var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
-	build_tree(nlvls, rtree)
-	c.printf("SUCCESS: Built tree of separators\n")
+	-- var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
+	-- build_tree(nlvls, rtree)
+	-- c.printf("SUCCESS: Built tree of separators\n")
+	var rtree = region(ispace(int1d, num_seps), int)
+	read_tree(tree,rtree)
 
 	-- permutation vector
 	var rperm = region(ispace(int1d, nrows), int)
@@ -270,26 +290,28 @@ task toplevel()
 
 	var prev_size 		: int64 = 0
 	var size 	  		: int64 = 0
-	var sep_position = region(ispace(int1d, num_seps), int)
+	-- var sep_position = region(ispace(int1d, num_seps), int)
 	var max_size 		: int64 = 0
 
+	-- leaves always comes first
 	for si=0, num_seps do
 		size = rfrows[{x=si, y=0}]+ rfrows[{x=si,y=1}]
 		-- var lo : int2d = {prev_size,prev_size}
 		-- var hi : int2d = {prev_size+size-1, prev_size+size-1}
 		-- var color : int2d = {si,si}
-		var lo : int2d = {prev_size,0}
-		var hi : int2d = {prev_size+size-1, size-1}
+		var lo : int2d = {0,prev_size}
+		var hi : int2d = {size-1,prev_size+size-1}
 		var color : int1d = si
 		
 		add_colored_rect(coloring, color, lo, hi)
 		-- Update prev_size
 		prev_size = prev_size + size
+
 		if size > max_size then
 			max_size = size 
 		end
 		-- Check if the bounds make sense
-		c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", color,lo.x,lo.y,hi.x,hi.y) 
+		-- c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", color,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
@@ -314,6 +336,8 @@ task toplevel()
 	for si=0, num_seps do
 		c.printf("si = %d",si)
 		var front = pfronts[si]
+		-- c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", si,front.bounds.lo.x,front.bounds.lo.y,front.bounds.hi.x,front.bounds.hi.y) 
+
 		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
 	end
 
@@ -336,19 +360,15 @@ task toplevel()
 	-- 	c.printf("\n \n ")
 	-- end
 
-	for l=nlvls-1, -1, -1 do
-		var nseps_at_l :int = cmath.pow(2,l)
-		for i=0, nseps_at_l, 1 do
-			var si : int = rtree[{x=l, y=i}]
-			var rchild = pfronts[si]
-			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
+	for si=0, num_seps do
+		var rchild = pfronts[si]
+		factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
 
-			-- Extend add to the parent
-			if l~= 0 then
-				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
-				var rparent = pfronts[par_idx]
-				extend_add(rparent, par_idx, rchild, si, rfrows)
-			end
+		var p =rtree[si]
+		-- Extend add to the parent
+		if p~= -1 then
+			var rparent = pfronts[p]
+			extend_add(rparent, par_idx, rchild, si, rfrows)
 		end
 	end
 

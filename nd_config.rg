@@ -6,6 +6,7 @@ struct Config
 {
   filename_matrix  : regentlib.string,
   filename_ord    : regentlib.string,
+  filename_tree    : regentlib.string,
   filename_nbr	  : regentlib.string, 
   dimension       : int
 }
@@ -18,6 +19,7 @@ terra print_usage_and_abort()
   c.printf("  -h            : Print the usage and exit.\n")
   c.printf("  -m {file}     : Use {file} as matrix file.\n")
   c.printf("  -o {file}	    : Use {file} as ordering file\n")
+  c.printf("  -t {file}     : Use {file} as tree file\n")
   c.printf("  -n {file}	    : Use {file} as neighbors file\n")
   c.printf("  -d {value}	: Set the dimension \n")
   -- c.printf("  -o {file}     : Save the final edge to {file}. Will use 'edge.png' by default.\n")
@@ -59,6 +61,15 @@ terra Config:initialize_from_command()
       filename_given = filename_given+1
       self.filename_ord= [regentlib.string](args.argv[i])
 
+    elseif cstring.strcmp(args.argv[i], "-t") == 0 then
+      i = i + 1
+      if not file_exists(args.argv[i]) then
+        c.printf("File '%s' doesn't exist!\n", args.argv[i])
+        c.abort()
+      end
+      filename_given = filename_given+1
+      self.filename_tree= [regentlib.string](args.argv[i])
+
     elseif cstring.strcmp(args.argv[i], "-n") == 0 then
       i = i + 1
       if not file_exists(args.argv[i]) then
@@ -75,7 +86,7 @@ terra Config:initialize_from_command()
     end
     i = i + 1
   end
-  if filename_given<3 then
+  if filename_given<4 then
     c.printf("One of the input files missing\n\n")
     print_usage_and_abort()
   end
