@@ -475,7 +475,7 @@ where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
 do 
 -- FIX ME 
 -- var nvals = [int](rrows.bounds.hi - rrows.bounds.lo +1)
-var nvals = rvals[0]
+var nvals = [int](rvals[0])
 var nrows = rx.bounds.hi.y - rx.bounds.lo.y + 1
 
 var sum_b : double = 0.0

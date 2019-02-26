@@ -80,7 +80,7 @@ do
 	var v : int[0]
 	for i=0, num_seps do
 		read_char(fp, v) -- Skip
-		-- read_char(fp, v) -- skip
+		read_char(fp, v) -- skip
 
 		read_char(fp, v) 
 
@@ -108,31 +108,14 @@ do
 	c.fclose(fp)
 end
 
-task read_tree(file : regentlib.string,
-			   rtree : region(ispace(int1d),int))
-where writes(rtree)
-do
+terra get_levels(file : regentlib.string)
 	var fp = c.fopen([rawstring](file), "rb")
-	var v : int[0]
-	read_char(fp, v) -- num of lines
-	var nlines = v[0]
-	
-	for i=0, nlines do
-		read_char(fp, v) -- skip 
-		read_char(fp, v) -- parent 
-		rtree[i]=v[0]		
-	end
-end
-
-terra get_nseps(file : regentlib.string)
-	var fp = c.fopen([rawstring](file), "rb")
-	-- var nlvls : int = 0
+	var nlvls : int = 0
 	var nseps : int = 0 
 
-	-- c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
-	c.fscanf(fp, "%d\n", &nseps)
+	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
 	c.fclose(fp) 
-	return nseps
+	return nlvls
 end
 
 task build_tree(nlvls : int,
@@ -151,7 +134,7 @@ end
 
 -- Add colored rectangle 
 terra add_colored_rect(coloring : c.legion_domain_point_coloring_t,
-                       color 	: int1d,
+                       color 	: int2d,
                        lo 		: int2d,
                        hi 		: int2d)
   var rect = c.legion_rect_2d_t{ lo = lo:to_point(), hi = hi:to_point()}
@@ -216,6 +199,37 @@ do
 
 end
 
+-- Verify results: LL^T = A
+task verify_result(n : int,
+                   org : region(ispace(f2d), double),
+                   res : region(ispace(f2d), double))
+where reads(org, res)
+do
+  c.printf("verifying results...\n")
+  var check = true
+  for x = 0, n do
+    for y = x, n do
+      var v = org[f2d { x = x, y = y }]
+      var sum : double = 0
+      for k = 0, x + 1 do
+        sum += res[f2d { x = k, y = y }] * res[f2d { x = k, y = x }]
+      end
+      if cmath.fabs(sum - v) > 1e-6 then
+        c.printf("error at (%d, %d) : %.3f, %.3f\n", y, x, sum, v)
+        check = false
+        break;
+      end
+    end
+  end
+  if check then
+  	c.printf("VERIFIED: Cholesky decomposition successful\n")
+  else 
+  	c.printf(" Cholesky decomposition incorrect\n")
+  end
+
+end
+
+
 task toplevel()
 	var config : Config
 	config:initialize_from_command()
@@ -223,8 +237,10 @@ task toplevel()
 	-- Read in the sparse matrix stored in matrix market file
 	var nrows : int, ncols : int, nz : int
 	var matrix_file  = config.filename_matrix
-	
+	--var matrix_file : regentlib.string  = "neglapl_2_10.mm"
+
 	var d = config.dimension
+	--var d = 2
 	nz 	  =  read_nz(matrix_file)
 	var rrows = region(ispace(int1d, nz+1), int)
 	var rcols = region(ispace(int1d, nz+1), int)
@@ -237,21 +253,25 @@ task toplevel()
 
 	c.printf("n_rows = %d, n_cols=%d, nz=%d\n",nrows,ncols,nz)
 
+	-- Create logical region for the matrix 
+	var r_org = region(ispace(f2d, {y=nrows,x=ncols}), double)
+	var r_perm = region(ispace(f2d, {y=nrows,x=ncols}), double)
+
 	-- Ordering and neighbors file
 	var ord = config.filename_ord
 	var nbr = config.filename_nbr
-	var tree = config.filename_tree
+	--var ord : regentlib.string = "ord10.txt"
+	--var nbr : regentlib.string = "nbr10.txt"
 
 	-- Limits of rrows
-	-- var max_length : int = nrows 
 	var N : int = [int](cmath.pow(nrows, [double](1.0/d)))
 	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
 
 	-- Get levels
-	--var nlvls : int = get_levels(ord)
-	var num_seps : int = get_nseps(ord)
+	var nlvls : int = get_levels(ord)
+	var num_seps : int = cmath.pow(2,nlvls)-1
 
-	-- Read in the separators
+	-- Read in the seperators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
 
 	var code : int = 0
@@ -259,28 +279,16 @@ task toplevel()
 	c.printf("SUCCESS: Read in the separators\n")
 
 	-- Read in the neighbors file
+	-- var rnbrs = region(ispace(int2d, {x=num_seps, y= max_length}), int) -- check
 	code = 1
 	read_nodes_region(rfrows, nbr, num_seps, code)
 	c.printf("SUCCESS: Read in the neighbors\n")
+
 	
 	-- Build tree 
-	-- var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
-	-- build_tree(nlvls, rtree)
-	-- c.printf("SUCCESS: Built tree of separators\n")
-	var rtree = region(ispace(int1d, num_seps), int)
-	read_tree(tree,rtree)
-
-	-- permutation vector
-	var rperm = region(ispace(int1d, nrows), int)
-	var tot_ord_size : int = 0
-	-- Add to perm vectors
-	for si=0, num_seps do
-		var ord_size : int = rfrows[{x=si, y=0}]
-		for j=0, ord_size do
-			rperm[j+tot_ord_size] = rfrows[{x=si, y=j+2}]
-		end
-		tot_ord_size = tot_ord_size + ord_size
-	end
+	var rtree = region(ispace(int2d, {x= nlvls, y=cmath.pow(2,nlvls)}), int)
+	build_tree(nlvls, rtree)
+	c.printf("SUCCESS: Built tree of separators\n")
 
 
 	-- Create a 2D coloring for different fronts
@@ -290,40 +298,28 @@ task toplevel()
 
 	var prev_size 		: int64 = 0
 	var size 	  		: int64 = 0
-	-- var sep_position = region(ispace(int1d, num_seps), int)
-	var max_size 		: int64 = 0
+	var sep_position = region(ispace(int1d, num_seps), int)
 
-	-- leaves always comes first
 	for si=0, num_seps do
 		size = rfrows[{x=si, y=0}]+ rfrows[{x=si,y=1}]
-		-- var lo : int2d = {prev_size,prev_size}
-		-- var hi : int2d = {prev_size+size-1, prev_size+size-1}
-		-- var color : int2d = {si,si}
-		var lo : int2d = {0,prev_size}
-		var hi : int2d = {size-1,prev_size+size-1}
-		var color : int1d = si
-		
+		var lo : int2d = {prev_size,prev_size}
+		var hi : int2d = {prev_size+size-1, prev_size+size-1}
+		var color : int2d = {si,si}
 		add_colored_rect(coloring, color, lo, hi)
+
+		-- Check if the bounds make sense
+		c.printf("color=(%d,%d), lo=(%d,%d), hi=(%d,%d)\n", color.x,color.y,lo.x,lo.y,hi.x,hi.y) 
+	
 		-- Update prev_size
 		prev_size = prev_size + size
-
-		if size > max_size then
-			max_size = size 
-		end
-		-- Check if the bounds make sense
-		-- c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", color,lo.x,lo.y,hi.x,hi.y) 
 	end
 
 	-- Create the region of fronts
-	-- var rfronts_size = prev_size
-	-- var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
-	var rfronts_size = max_size
-	var rfronts = region(ispace(f2d, {y=max_size, x = prev_size}), double)
+	var rfronts_size = prev_size
+	var rfronts = region(ispace(f2d, {y=prev_size, x = prev_size}), double)
 
-	c.printf("Here\n")
 	-- Create the partition 
-	-- var pspace = ispace(int2d, {x=num_seps, y=num_seps})
-	var pspace = ispace(int1d, num_seps)
+	var pspace = ispace(int2d, {x=num_seps, y=num_seps})
 	var pfronts = partition(disjoint, rfronts, coloring, pspace)
 
 	c.printf("SUCCESS: Partitioning done\n")
@@ -334,10 +330,7 @@ task toplevel()
 
 	-- Form the fronts for each interface
 	for si=0, num_seps do
-		--c.printf("si = %d",si)
-		var front = pfronts[si]
-		-- c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", si,front.bounds.lo.x,front.bounds.lo.y,front.bounds.hi.x,front.bounds.hi.y) 
-
+		var front = pfronts[{x=si, y=si}]
 		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
 	end
 
@@ -360,15 +353,22 @@ task toplevel()
 	-- 	c.printf("\n \n ")
 	-- end
 
-	for si=0, num_seps do
-		var rchild = pfronts[si]
-		factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
+	for l=nlvls-1, -1, -1 do
+		var nseps_at_l :int = cmath.pow(2,l)
+		for i=0, nseps_at_l, 1 do
+			
+			
+			var si : int = rtree[{x=l, y=i}]
+			var rchild = pfronts[{x=si, y=si}]
+			factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
 
-		var p =rtree[si]
-		-- Extend add to the parent
-		if p~= -1 then
-		 	var rparent = pfronts[p]
-		 	extend_add(rparent, p, rchild, si, rfrows)
+			-- Extend add to the parent
+			if l~= 0 then
+				var par_idx : int = rtree[{x=l-1, y= [int](i/2)}]
+				-- c.printf("par_idx = %d, chi_idx = %d\n", par_idx, si)
+				var rparent = pfronts[{x=par_idx, y=par_idx}]
+				extend_add(rparent, par_idx, rchild, si, rfrows)
+			end
 		end
 	end
 
@@ -376,52 +376,29 @@ task toplevel()
 	var ts_end = c.legion_get_current_time_in_micros()
   	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
-  	-- Solve 
-  	var rx = region(ispace(int2d, {x=1,y=nrows}),double)
-  	var rb = region(ispace(int2d, {x=1,y=nrows}),double)
-  	fill(rx, 2.0)
-  	copy(rx, rb)
 
-  	-- Forward solve
-  	var index : int = 0
-  	for i=0, num_seps do
-  		fwd(rx, pfronts[i], rfrows, rperm, i, index)
-  		index = index+rfrows[{x=i, y=0}]
-  	end
-
-  	-- backward solve
-  	for i=num_seps-1, -1, -1 do
-  		bwd(rx, pfronts[i], rfrows, rperm, i, index)
-  		index = index-rfrows[{x=i, y=0}]
-  	end
-
-  	var rx_unperm = region(ispace(int2d, {x=1,y=nrows}), double)
-  	for i=0, nrows do
-  		rx_unperm[{x=0,y=rperm[i]}] = rx[{x=0,y=i}]
-  	end
-
-  	-- Verify Ax == b
-  	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
-
-  	-- for i=0, nrows do
-  	-- 	c.printf("%8.4f\n", rb[{x=0,y=i}])
-  	-- end
+	-- Print fronts
+	for si=0, num_seps do
+		var bds = pfronts[{x=si, y=si}].bounds 
+		var nr = bds.hi.y - bds.lo.x +1
+		var nc = bds.hi.x - bds.lo.x +1
+		for i=0, nr do
+			for j=0, nc do
+				var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+				-- if rfronts[d]==0.0 then
+				-- 	c.printf("%2.1d",[int](rfronts[d]))
+				-- else
+					c.printf("%8.4f ", rfronts[d])
+				-- end	
+			end
+			c.printf("\n")
+		end
+		c.printf("\n \n")
+	end
 
 
-	-- -- Print fronts
-	-- for si=num_seps-1, num_seps do
-	-- 	var bds = pfronts[{x=si, y=si}].bounds 
-	-- 	var nr = bds.hi.y - bds.lo.x +1
-	-- 	var nc = bds.hi.x - bds.lo.x +1
-	-- 	for i=0, nr do
-	-- 		for j=0, nc do
-	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
-	-- 			c.printf("%8.4f ", rfronts[d])	
-	-- 		end
-	-- 		c.printf("\n")
-	-- 	end
-	-- 	c.printf("\n \n")
-	-- end
+	
+   
 
 end
 
