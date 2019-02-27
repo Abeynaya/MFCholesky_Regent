@@ -80,7 +80,7 @@ do
 	var v : int[0]
 	for i=0, num_seps do
 		read_char(fp, v) -- Skip
-		-- read_char(fp, v) -- skip
+		read_char(fp, v) -- skip
 
 		read_char(fp, v) 
 
@@ -109,16 +109,21 @@ do
 end
 
 task read_tree(file : regentlib.string,
-			   rtree : region(ispace(int1d),int))
-where writes(rtree)
+			   rtree : region(ispace(int1d),int),
+			   rlvls : region(ispace(int1d),int))
+where writes(rtree, rlvls)
 do
 	var fp = c.fopen([rawstring](file), "rb")
-	var v : int[0]
-	read_char(fp, v) -- num of lines
-	var nlines = v[0]
+	var nlvls : int = 0
+	var nseps : int = 0 
+
+	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
 	
-	for i=0, nlines do
-		read_char(fp, v) -- skip 
+	for i=0, nseps do
+		read_char(fp, v) -- level number
+		rlvls[v[0]]=rlvls[v[0]]+1
+
+		read_char(fp, v) -- sep number
 		read_char(fp, v) -- parent 
 		rtree[i]=v[0]		
 	end
@@ -126,13 +131,13 @@ end
 
 terra get_nseps(file : regentlib.string)
 	var fp = c.fopen([rawstring](file), "rb")
-	-- var nlvls : int = 0
+	var nlvls : int = 0
 	var nseps : int = 0 
 
-	-- c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
-	c.fscanf(fp, "%d\n", &nseps)
+	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
+	-- c.fscanf(fp, "%d\n", &nseps)
 	c.fclose(fp) 
-	return nseps
+	return nlvls, nseps
 end
 
 task build_tree(nlvls : int,
@@ -249,7 +254,8 @@ task toplevel()
 
 	-- Get levels
 	--var nlvls : int = get_levels(ord)
-	var num_seps : int = get_nseps(ord)
+	-- var num_seps : int = get_nseps(ord)
+	var nlvs : int, nseps : int = get_nseps(ord)
 
 	-- Read in the separators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
@@ -268,7 +274,11 @@ task toplevel()
 	-- build_tree(nlvls, rtree)
 	-- c.printf("SUCCESS: Built tree of separators\n")
 	var rtree = region(ispace(int1d, num_seps), int)
-	read_tree(tree,rtree)
+	var rlvls = region(ispace(int1d, nlvls), int)
+	fill(rlvls,0)
+	read_tree(tree,rtree, rlvls)
+	c.printf("SUCCESS: Read in the tree structure\n")
+
 
 	-- permutation vector
 	var rperm = region(ispace(int1d, nrows), int)
@@ -320,7 +330,6 @@ task toplevel()
 	var rfronts_size = max_size
 	var rfronts = region(ispace(f2d, {y=max_size, x = prev_size}), double)
 
-	c.printf("Here\n")
 	-- Create the partition 
 	-- var pspace = ispace(int2d, {x=num_seps, y=num_seps})
 	var pspace = ispace(int1d, num_seps)
@@ -374,6 +383,7 @@ task toplevel()
 
 	__fence(__execution, __block)
 	var ts_end = c.legion_get_current_time_in_micros()
+	c.printf("SUCCESS: Factorization done\n")
   	c.printf("Total time: %.6f sec.\n", (ts_end - ts_start) * 1e-6)
 
   	-- Solve 
