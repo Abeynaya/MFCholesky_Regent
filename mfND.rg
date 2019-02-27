@@ -380,17 +380,35 @@ task toplevel()
 	-- 	c.printf("\n \n ")
 	-- end
 
-	for si=0, num_seps do
-		var rchild = pfronts[si]
-		factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
-
-		var p =rtree[si]
-		-- Extend add to the parent
-		if p~= -1 then
-		 	var rparent = pfronts[p]
-		 	extend_add(rparent, p, rchild, si, rfrows)
+	var si : int = 0
+	for l=0, nlvls do
+		var nseps_at_l : int = rlvls[l]
+		for s=0, nseps_at_l do
+			var rchild = pfronts[si+s]
+			factorize(rchild, rfrows[{x=si+s, y=0}], rfrows[{x=si+s, y=1}])
 		end
+
+		for s=0, nseps_at_l do
+			var p =rtree[si+s] -- parent
+			if p~= -1 then
+		 		var rparent = pfronts[p]
+		 		extend_add(rparent, p, rchild, si+s, rfrows)
+			end
+		end
+		si = si+nseps_at_l
 	end
+
+	-- for si=0, num_seps do
+	-- 	var rchild = pfronts[si]
+	-- 	factorize(rchild, rfrows[{x=si, y=0}], rfrows[{x=si, y=1}])
+
+	-- 	var p =rtree[si]
+	-- 	-- Extend add to the parent
+	-- 	if p~= -1 then
+	-- 	 	var rparent = pfronts[p]
+	-- 	 	extend_add(rparent, p, rchild, si, rfrows)
+	-- 	end
+	-- end
 
 	__fence(__execution, __block)
 	var ts_end = c.legion_get_current_time_in_micros()
