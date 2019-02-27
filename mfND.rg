@@ -110,14 +110,12 @@ end
 
 task read_tree(file : regentlib.string,
 			   rtree : region(ispace(int1d),int),
-			   rlvls : region(ispace(int1d),int))
+			   rlvls : region(ispace(int1d),int),
+			   nseps : int)
 where writes(rtree, rlvls)
 do
 	var fp = c.fopen([rawstring](file), "rb")
-	var nlvls : int = 0
-	var nseps : int = 0 
-
-	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
+	skip_header(fp) -- Skip header
 	
 	for i=0, nseps do
 		read_char(fp, v) -- level number
@@ -255,7 +253,7 @@ task toplevel()
 	-- Get levels
 	--var nlvls : int = get_levels(ord)
 	-- var num_seps : int = get_nseps(ord)
-	var nlvs : int, nseps : int = get_nseps(ord)
+	var nlvs : int, num_seps : int = get_nseps(ord)
 
 	-- Read in the separators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
@@ -276,7 +274,7 @@ task toplevel()
 	var rtree = region(ispace(int1d, num_seps), int)
 	var rlvls = region(ispace(int1d, nlvls), int)
 	fill(rlvls,0)
-	read_tree(tree,rtree, rlvls)
+	read_tree(tree,rtree, rlvls, num_seps)
 	c.printf("SUCCESS: Read in the tree structure\n")
 
 
