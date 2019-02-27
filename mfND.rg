@@ -112,11 +112,13 @@ task read_tree(file : regentlib.string,
 			   rtree : region(ispace(int1d),int),
 			   rlvls : region(ispace(int1d),int),
 			   nseps : int)
-where writes(rtree, rlvls)
+where writes(rtree), reads writes(rlvls)
 do
 	var fp = c.fopen([rawstring](file), "rb")
 	skip_header(fp) -- Skip header
 	
+	var v : int[0]
+
 	for i=0, nseps do
 		read_char(fp, v) -- level number
 		rlvls[v[0]]=rlvls[v[0]]+1
@@ -135,7 +137,18 @@ terra get_nseps(file : regentlib.string)
 	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
 	-- c.fscanf(fp, "%d\n", &nseps)
 	c.fclose(fp) 
-	return nlvls, nseps
+	return nseps
+end
+
+terra get_nlvls(file : regentlib.string)
+	var fp = c.fopen([rawstring](file), "rb")
+	var nlvls : int = 0
+	var nseps : int = 0 
+
+	c.fscanf(fp, "%d %d\n", &nlvls, &nseps)
+	-- c.fscanf(fp, "%d\n", &nseps)
+	c.fclose(fp) 
+	return nlvls
 end
 
 task build_tree(nlvls : int,
@@ -251,9 +264,9 @@ task toplevel()
 	var max_length : int = [int](2*cmath.pow(N, d-1)+1)
 
 	-- Get levels
-	--var nlvls : int = get_levels(ord)
-	-- var num_seps : int = get_nseps(ord)
-	var nlvs : int, num_seps : int = get_nseps(ord)
+	var nlvls : int = get_nlvls(ord)
+	var num_seps : int = get_nseps(ord)
+	-- var nlvls : int, num_seps : int = get_nseps(ord)
 
 	-- Read in the separators
 	var rfrows = region(ispace(int2d, {x=num_seps, y= 2*max_length}), int)
