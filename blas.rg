@@ -304,7 +304,8 @@ do
     for j=0, snbrs, 1 do
       var fj = rind[j]
       rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] = rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] 
-                                                + rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
+                                                  + rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
+      -- parent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] += rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
     end
   end
 

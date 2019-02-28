@@ -388,13 +388,24 @@ task toplevel()
 			factorize(rchild, rfrows[{x=si+s, y=0}], rfrows[{x=si+s, y=1}])
 		end
 
-		for s=0, nseps_at_l do
+		for s=0, nseps_at_l, 2 do
 			var p =rtree[si+s] -- parent
 			if p~= -1 then
+				-- rchild = pfronts[si+s]
 		 		var rparent = pfronts[p]
-		 		extend_add(rparent, p, rchild, si+s, rfrows)
+		 		extend_add(rparent, p, pfronts[si+s], si+s, rfrows)
 			end
 		end
+
+		for s=1, nseps_at_l, 2 do
+			var p =rtree[si+s] -- parent
+			if p~= -1 then
+				-- rchild = pfronts[si+s]
+		 		var rparent = pfronts[p]
+		 		extend_add(rparent, p, pfronts[si+s], si+s, rfrows)
+			end
+		end
+
 		si = si+nseps_at_l
 	end
 
