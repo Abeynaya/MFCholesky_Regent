@@ -47,6 +47,28 @@ else
   terralib.linklibrary("liblapack.so")
 end
 
+local struct vec{
+  nodes : &int;
+  N     : uint64; --size
+}
+
+terra vec: init(N : int)
+  self.nodes = [&int](std.malloc(sizeof(int)*N))
+    self.N = N   
+end
+
+terra vec:set(i : int, v : int)
+    self.nodes[i] = v
+end
+
+terra vec:get(i : int)
+    return self.nodes[i] 
+end
+
+terra vec:length()
+    return self.N 
+end
+
 function raw_ptr_factory(ty)
   local struct raw_ptr
   {
@@ -284,7 +306,9 @@ do
 
   -- Find the rows in the parent corresponding to the update
   var snbrs : int = rfrows[{x=child_idx, y=1}]
-  var rind = region(ispace(int1d, snbrs),int)
+  -- var rind = region(ispace(int1d, snbrs),int)
+  var ind: vec
+  ind:init(snbrs)
 
   var l:int = 2
   var start = rfrows[{x=child_idx, y=0}]+2
@@ -292,7 +316,8 @@ do
     while(rfrows[{x=par_idx, y=l}] ~= rfrows[{x=child_idx,y=i}]) do
       l = l+1
     end
-    rind[i-start]=l-2
+    -- rind[i-start]=l-2
+    ind:set(i-start,l-2)
     -- c.printf("print l = %d\n", rind[i-start])
   end
 
@@ -300,9 +325,9 @@ do
   var cbds = rchild.bounds
 
   for i = 0, snbrs, 1 do
-    var fi = rind[i]
+    var fi = ind:get(i)
     for j=0, snbrs, 1 do
-      var fj = rind[j]
+      var fj = ind:get(j)
       rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] = rparent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] 
                                                   + rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
       -- parent[{y=pbds.lo.y+fj, x=pbds.lo.x+fi}] += rchild[{y=cbds.lo.y+j+start-2, x=cbds.lo.x+i+start-2}]
