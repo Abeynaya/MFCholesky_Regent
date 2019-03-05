@@ -1,0 +1,5 @@
+level	start	end	color	opacity	title	initiation	in	out	children	parents	prof_uid
+3	232394	233517	#003cff	1.0	Partition By Field	20					257831
+3	249815	251067	#003cff	1.0	Partition By Image Range	21					165291
+3	12491775	12491781	#000000	1.0	Intersection						165292
+3	12491815	12491816	#000000	1.0	Intersection						165293
