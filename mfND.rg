@@ -30,7 +30,7 @@ task read_matrix(file : regentlib.string,
 				 rrows : region(ispace(int1d), int),
 				 rcolptrs : region(ispace(int1d), int),
 				 rvals : region(ispace(int1d), double))
-where writes(rrows, rcols, rcolptrs, rvals)
+where writes(rrows, rcolptrs, rvals)
 do
 	var fp = c.fopen([rawstring](file), "rb")
 	skip_header(fp)
