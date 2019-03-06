@@ -28,9 +28,9 @@ end
 
 task read_matrix(file : regentlib.string, 
 				 rrows : region(ispace(int1d), int),
-				 rcols : region(ispace(int1d), int),
+				 rcolptrs : region(ispace(int1d), int),
 				 rvals : region(ispace(int1d), double))
-where writes(rrows, rcols, rvals)
+where writes(rrows, rcols, rcolptrs, rvals)
 do
 	var fp = c.fopen([rawstring](file), "rb")
 	skip_header(fp)
@@ -38,16 +38,27 @@ do
 	var rcv : double[3]
 	read_line(fp, rcv)
 	rrows[0]=[int](rcv[0])
-	rcols[0]=[int](rcv[1])
+	-- rcols[0]=[int](rcv[1])
+	rcolptrs[0]=[int](rcv[1])
+
 	rvals[0]=[int](rcv[2])
 	var nz = [int](rcv[2])
+
+	var cptr : int = 1
 
 	for i=1, nz+1 do
 		read_line(fp, rcv)
 		rrows[i] = [int](rcv[0])-1
-		rcols[i]=[int](rcv[1])-1
+		-- rcols[i]=[int](rcv[1])-1
 		rvals[i]=rcv[2]	
+
+		if ([int](rcv[1]) ~= cptr-1) then
+			rcolptrs[cptr]=i
+			cptr = cptr+1
+		end
+
 	end
+	rcolptrs[cptr]=nz+1
 
 	c.fclose(fp)
 
@@ -193,37 +204,52 @@ do
 	var yhi = bounds.hi.y
 	var nz = [int](rvals[0])
 
-	var sep1_size = rfrows[{x=si, y=0}] 
-	var sep2_size = sep1_size + rfrows[{x=si, y=1}]
+	var csize = rfrows[{x=si, y=0}] 
+	var nsize = rfrows[{x=si, y=1}]
 
-	-- var rsubcol = rseps[{x=si}] | rnbrs[{x=si}]
+	-- Ass part 
+	for i=0, csize do
+		var ci = rfrows[{x=si,y=2+i}]
+		var cptr = rcols[ci+1] -- start index of that column ci  
+		for j=0, csize do
+			for l=cptr, rcols[ci+2] do
+				if(rfrows[{x=si, y=j+2}]== rrows[l]) then 
+					submatrix[{y= ylo+ j,x=xlo+i }]= rvals[l]
+					submatrix[{y= ylo+ i,x=xlo+j }]= rvals[l]
+					break
+				elseif (rfrows[{x=si, y=j+2}]<rrows[l]) then
+					break
+				end
+			end
 
-	for iter= 1, nz+1 do
-		for i=2, sep1_size+2 do
-			var idx_i = rfrows[{x=si, y=i}]
-			if rrows[iter] == idx_i then
-				for j=2, sep2_size+2 do
-					var point1 : f2d = {y=j-2+ylo, x= i-2+xlo}
+		end
+	end
 
-					var idx_j = rfrows[{x=si, y=j}]
+	-- Ans part
+	var m :int = 0
+	for i=0, csize do 
+		var ci = rfrows[{x=si,y=2+i}]
+		for j=0, nsize do
+			var ri = rfrows[{x=si, y=j+2+csize}]
 
-					if rcols[iter] == idx_j  then
-						submatrix[point1] = rvals[iter]
-						-- counter = counter +1
-						break;
+			if ci<ri then
+				var cptr = rcols[ci+1]
+				for l=cptr, rcols[ci+2] do
+					if(rfrows[{x=si, y=j+2+csize}]==rrows[l]) then
+						submatrix[{y=ylo+j+csize, x=xlo+i}]=rvals[l]
+						break
+					elseif (rfrows[{x=si, y=j+2+csize}]<rrows[l]) then
+						break
 					end
 				end
-
-			elseif rcols[iter] == idx_i then
-				for j=2, sep2_size+2 do
-					var point1 : f2d = {y=j-2+ylo, x= i-2+xlo}
-
-					var idx_j = rfrows[{x=si, y=j}]
-
-					if  rrows[iter] == idx_j then
-						submatrix[point1] = rvals[iter]
-						-- counter = counter +1
-						break;
+			else 
+				var cptr = rcols[ri+1]
+				for l=cptr, rcols[ri+2] do
+					if(rfrows[{x=si, y=i+2}]==rrows[l]) then
+						submatrix[{y=ylo+j+csize, x=xlo+i}]=rvals[l]
+						break
+					elseif (rfrows[{x=si, y=i+2}]<rrows[l]) then
+						break
 					end
 				end
 			end
@@ -243,13 +269,15 @@ task toplevel()
 	var d = config.dimension
 	nz 	  =  read_nz(matrix_file)
 	var rrows = region(ispace(int1d, nz+1), int)
-	var rcols = region(ispace(int1d, nz+1), int)
+	-- var rcols = region(ispace(int1d, nz+1), int)
+	var rcolptrs = region(ispace(int1d, nz+1), int)
+
 	var rvals = region(ispace(int1d, nz+1), double)
 
-	read_matrix(matrix_file, rrows, rcols, rvals)
+	read_matrix(matrix_file, rrows, rcolptrs, rvals)
 
 	nrows = rrows[0]
-	ncols = rcols[0]
+	ncols = rcolptrs[0]
 
 	c.printf("n_rows = %d, n_cols=%d, nz=%d\n",nrows,ncols,nz)
 
@@ -357,15 +385,15 @@ task toplevel()
 		--c.printf("si = %d",si)
 		var front = pfronts[si]
 		-- c.printf("color=(%d), lo=(%d,%d), hi=(%d,%d)\n", si,front.bounds.lo.x,front.bounds.lo.y,front.bounds.hi.x,front.bounds.hi.y) 
-
-		fill_matrix(rfrows, si, rrows, rcols, rvals, front)
+		fill_matrix(rfrows, si, rrows, rcolptrs, rvals, front)
 	end
 
-	-- Print fronts
+	-- -- Print fronts
 	-- for si=0, num_seps do
-	-- 	var bds = pfronts[{x=si, y=si}].bounds 
-	-- 	var nr = bds.hi.y - bds.lo.x +1
+	-- 	var bds = pfronts[si].bounds 
+	-- 	var nr = bds.hi.y - bds.lo.y +1
 	-- 	var nc = bds.hi.x - bds.lo.x +1
+	-- 	c.printf("s= %d, nr=%d, nc=%d\n",si,nr,nc )
 	-- 	for i=0, nr do
 	-- 		for j=0, nc do
 	-- 			var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
@@ -451,7 +479,7 @@ task toplevel()
   	end
 
   	-- Verify Ax == b
-  	verify(rrows, rcols, rvals, rb, rx_unperm, rperm)
+  	verify(rrows, rcolptrs, rvals, rb, rx_unperm, rperm)
 
   	-- for i=0, nrows do
   	-- 	c.printf("%8.4f\n", rb[{x=0,y=i}])

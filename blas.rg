@@ -492,12 +492,12 @@ do
 end
 
 task verify(rrows : region(ispace(int1d), int),
-             rcols : region(ispace(int1d), int),
+             rcolptrs : region(ispace(int1d), int),
              rvals : region(ispace(int1d), double),
              rb   : region(ispace(int2d), double),
              rx : region(ispace(int2d), double),
              rperm : region(ispace(int1d), int))
-where reads(rrows, rcols, rvals, rperm, rx), reads writes(rb)
+where reads(rrows, rcolptrs, rvals, rperm, rx), reads writes(rb)
 do 
 -- FIX ME 
 -- var nvals = [int](rrows.bounds.hi - rrows.bounds.lo +1)
@@ -509,11 +509,17 @@ for i=0, nrows do
   sum_b = sum_b + rb[{x=0,y=i}]*rb[{x=0,y=i}]
 end
 
-
+var colp = 1
+var col = 0
 for i= 1, nvals+1 do
-  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=rcols[i]}]
-  if rcols[i] ~= rrows[i] then
-    rb[{x=0,y=rcols[i]}] = rb[{x=0,y=rcols[i]}]-rvals[i]*rx[{x=0,y=rrows[i]}]
+  if i>= rcolptrs[colp+1] then 
+    colp = colp+1
+  end
+  col = colp-1
+
+  rb[{x=0,y=rrows[i]}] = rb[{x=0,y=rrows[i]}]-rvals[i]*rx[{x=0,y=col}]
+  if col ~= rrows[i] then
+    rb[{x=0,y=col}] = rb[{x=0,y=col}]-rvals[i]*rx[{x=0,y=rrows[i]}]
   end 
 end
 
