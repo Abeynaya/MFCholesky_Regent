@@ -39,6 +39,9 @@ extern void dgemv_(char* trans, int* m, int* n, double* alpha,
 
 ]]
 
+-- Include helper functions to read and write 
+-- local helper = require("helper_fns")
+
 if os.execute("bash -c \"[ `uname` == 'Darwin' ]\"") == 0 then
   terralib.linklibrary("libblas.dylib")
   terralib.linklibrary("liblapack.dylib")
@@ -51,6 +54,7 @@ local struct vec{
   nodes : &int;
   N     : uint64; --size
 }
+linalg.vec = vec
 
 terra vec: init(N : int)
   self.nodes = [&int](std.malloc(sizeof(int)*N))
@@ -65,9 +69,16 @@ terra vec:get(i : int)
     return self.nodes[i] 
 end
 
+terra vec:add_one(i : int)
+    self.nodes[i] =self.nodes[i]+1
+end
+
+
 terra vec:length()
     return self.N 
 end
+
+linalg.vec = vec
 
 function raw_ptr_factory(ty)
   local struct raw_ptr
@@ -94,6 +105,28 @@ terra get_raw_ptr(xlo : int, ylo : int, xhi : int, yhi : int,
   var ptr = c.legion_accessor_array_2d_raw_rect_ptr(fa, rect, &subrect, offsets)
   return raw_ptr { ptr = [&double](ptr), offset = offsets[1].offset / sizeof(double) }
 end
+
+task print_front(rfront: region(ispace(f2d),double))
+where reads(rfront)
+do
+    var bds = rfront.bounds 
+    var nr = bds.hi.y - bds.lo.y +1
+    var nc = bds.hi.x - bds.lo.x +1
+    c.printf("nr=%d, nc=%d\n",nr,nc )
+    for i=0, nr do
+      for j=0, nc do
+        var d : f2d = {y=bds.lo.y+i , x=bds.lo.x+j}
+        if rfront[d]==0.0 then
+          c.printf("%2.1d",[int](rfront[d]))
+        else
+          c.printf("%8.5f ", rfront[d])
+        end 
+      end
+      c.printf("\n")
+    end
+    c.printf("\n \n ")
+end
+
 
 -- Do factorization for SPD blocks
 terra dpotrf_terra(xlo : int, ylo:int, xhi: int, yhi: int,
@@ -269,16 +302,107 @@ do
               __physical(rC)[0], __fields(rC)[0])
 end
 
+task fill_factorize(rfront : region(ispace(f2d), double),
+               rfrows: region(ispace(int2d), int),
+               si : int,
+               rrows : region(ispace(int1d), int),
+               rcols : region(ispace(int1d), int),
+               rvals : region(ispace(int1d), double))
+where reads(rfrows, rvals, rcols, rrows), reads writes(rfront)
+do
+-- fill 
+  var bounds = rfront.bounds
+  var xlo = bounds.lo.x
+  var ylo = bounds.lo.y
+  var xhi = bounds.hi.x
+  var yhi = bounds.hi.y
+
+  var csize = rfrows[{x=si, y=0}] 
+  var nsize = rfrows[{x=si, y=1}]
+
+  -- Ass part 
+  for i=0, csize do
+    var ci = rfrows[{x=si,y=2+i}]
+    var cptr = rcols[ci+1] -- start index of that column ci  
+    for j=0, csize do
+      for l=cptr, rcols[ci+2] do
+        if(rfrows[{x=si, y=j+2}]== rrows[l]) then 
+          rfront[{y= ylo+ j,x=xlo+i }]= rfront[{y= ylo+ j,x=xlo+i }]+ rvals[l]
+          break
+        elseif (rfrows[{x=si, y=j+2}]<rrows[l]) then
+          break
+        end
+      end
+
+    end
+  end
+
+  -- Ans part
+  var m :int = 0
+  for i=0, csize do 
+    var ci = rfrows[{x=si,y=2+i}]
+    for j=0, nsize do
+      var ri = rfrows[{x=si, y=j+2+csize}]
+
+      if ci<ri then
+        var cptr = rcols[ci+1]
+        for l=cptr, rcols[ci+2] do
+          if(rfrows[{x=si, y=j+2+csize}]==rrows[l]) then
+            rfront[{y=ylo+j+csize, x=xlo+i}]=rfront[{y=ylo+j+csize, x=xlo+i}]+rvals[l]
+            break
+          elseif (rfrows[{x=si, y=j+2+csize}]<rrows[l]) then
+            break
+          end
+        end
+      else 
+        var cptr = rcols[ri+1]
+        for l=cptr, rcols[ri+2] do
+          if(rfrows[{x=si, y=i+2}]==rrows[l]) then
+            rfront[{y=ylo+j+csize, x=xlo+i}]=rfront[{y=ylo+j+csize, x=xlo+i}]+rvals[l]
+            break
+          elseif (rfrows[{x=si, y=i+2}]<rrows[l]) then
+            break
+          end
+        end
+      end
+    end
+  end
+
+  print_front(rfront)
+
+  var sseps = rfrows[{x=si, y=0}]
+  var snbrs = rfrows[{x=si, y=1}]
+
+  -- potrf
+  dpotrf_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1, 
+         __physical(rfront)[0], __fields(rfront)[0])
+  -- trsm 
+  dtrsm_terra(xlo, ylo+sseps, xlo+sseps-1, yhi,
+              xlo, ylo, xlo+sseps-1, ylo+sseps-1,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rfront)[0], __fields(rfront)[0])
+  -- syrk 
+  dsyrk_terra(xlo+sseps, ylo+sseps, xhi, yhi,
+              xlo, ylo+sseps, xlo+sseps-1, yhi,
+              __physical(rfront)[0], __fields(rfront)[0],
+              __physical(rfront)[0], __fields(rfront)[0])
+
+end
+
+
 task factorize(rfront : region(ispace(f2d), double),
-               sseps : int,
-               snbrs : int)
-where reads writes(rfront)
+               rfrows: region(ispace(int2d), int),
+               ci : int)
+where reads(rfrows), reads writes(rfront)
 do
   var bounds = rfront.bounds
   var xlo = bounds.lo.x
   var ylo = bounds.lo.y
   var xhi = bounds.hi.x
   var yhi = bounds.hi.y
+
+  var sseps = rfrows[{x=ci, y=0}]
+  var snbrs = rfrows[{x=ci, y=1}]
 
   -- potrf
   dpotrf_terra(xlo, ylo, xlo+sseps-1, ylo+sseps-1, 
@@ -442,6 +566,7 @@ do
       rx[{x=0,y=globid}] = rx[{x=0,y=globid}]+rxn[{x=0,y=i-starti}]
     end
   end
+  return start+ rfrows[{x=front_idx, y=0}]
 end
 
 -- Backward solve
@@ -489,6 +614,8 @@ do
               0, last-sseps,0, last-1,
               __physical(rfront)[0], __fields(rfront)[0],
               __physical(rx)[0], __fields(rx)[0], 1)
+
+  return last - rfrows[{x=front_idx, y=0}]
 end
 
 task verify(rrows : region(ispace(int1d), int),
@@ -501,7 +628,7 @@ where reads(rrows, rcolptrs, rvals, rperm, rx), reads writes(rb)
 do 
 -- FIX ME 
 -- var nvals = [int](rrows.bounds.hi - rrows.bounds.lo +1)
-var nvals = [int](rvals[0])
+var nvals = [int](rvals.bounds.hi - rvals.bounds.lo +1)
 var nrows = rx.bounds.hi.y - rx.bounds.lo.y + 1
 
 var sum_b : double = 0.0
@@ -511,7 +638,7 @@ end
 
 var colp = 1
 var col = 0
-for i= 1, nvals+1 do
+for i= 0, nvals do
   if i>= rcolptrs[colp+1] then 
     colp = colp+1
   end
